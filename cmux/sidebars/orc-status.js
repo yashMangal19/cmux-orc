@@ -1,7 +1,7 @@
 // orc-status: claude-orc's right-sidebar panel.
 // In an Orc workspace (title ends in "-Orc") it lists that Orc's children with
-// status and stage; everywhere else it shows the Sessions overview: what needs
-// you, one rollup row per Orc, then every independent session.
+// status and stage; everywhere else it shows the Sessions overview: one rollup
+// row per Orc, then every independent session (waiting ones first).
 //   cmux right-sidebar set custom orc-status
 //
 // Stage text comes from tab titles: `orc stage "case 41/88"` renames the tab to
@@ -67,25 +67,6 @@ const entries = computed(() => {
 
   out.push({ key: "t:overview", kind: "title", text: "Sessions", sub: "", color: null });
 
-  // Only sessions that report to the user: independents and each Orc's own tab.
-  // Children report to their Orc, so their turns are the Orc's business.
-  const waiting = [];
-  for (const w of all) {
-    if (isManager(w)) continue;
-    for (const a of w.agents ?? []) {
-      if (a.status !== "needs_input") continue;
-      const tab = (w.tabs ?? []).find((x) => x.surfaceId === a.surfaceId);
-      if (isOrc(w) && tab !== (w.tabs ?? [])[0]) continue;
-      const t = splitTitle(tab?.title);
-      waiting.push({
-        key: "n:" + a.id, kind: "attn", wsId: w.id, surfaceId: a.surfaceId,
-        name: isOrc(w) && t.name ? t.name : (t.name || w.title), stage: t.stage, agent: a,
-      });
-    }
-  }
-  if (waiting.length) out.push({ key: "s:turn", kind: "section", text: "YOUR TURN" });
-  out.push(...waiting);
-
   const orcs = all.filter(isOrc);
   if (orcs.length) out.push({ key: "s:orcs", kind: "section", text: "ORCS" });
   for (const w of orcs) {
@@ -101,9 +82,9 @@ const entries = computed(() => {
     });
   }
 
-  // Sessions already listed under YOUR TURN are not repeated here.
-  const solo = all.filter((w) => !isOrc(w) && !isManager(w) && (w.agents ?? []).length
-    && w.agents[0].status !== "needs_input");
+  // Waiting sessions sort first; an Orc's waiting children stay inside the Orc row's count.
+  const solo = all.filter((w) => !isOrc(w) && !isManager(w) && (w.agents ?? []).length)
+    .sort((x, y) => statusOf(x.agents[0]).rank - statusOf(y.agents[0]).rank);
   if (solo.length) out.push({ key: "s:solo", kind: "section", text: "SESSIONS" });
   for (const w of solo) {
     const a = w.agents[0];
