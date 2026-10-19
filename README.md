@@ -2,7 +2,7 @@
 
 **Run a team of Claude Code sessions in [cmux](https://cmux.com). See which one needs you.**
 
-![An Orc and its children as tabs in cmux, with the status sidebar on the right](assets/media/hero.gif)
+![An Orc and its children as tabs in cmux, with the status sidebar on the right](assets/media/cmux-orc-hero.gif)
 
 ```
 /plugin marketplace add yashMangal19/cmux-orc
@@ -18,25 +18,25 @@ Then restart your running Claude sessions so they load the plugin's hooks.
 
 An *Orc* (orchestrator) is a Claude session that starts, closes and reopens child sessions. Its cmux workspace becomes one coloured, pinned tile in the left panel. Its children are tabs to the right of the Orc's tab. Each child gets a brief and reports back to the Orc only.
 
-![An Orc spawning two children into new tabs](assets/media/orcs.gif)
+![An Orc spawning two children into new tabs](assets/media/feature-orc-tabs.gif)
 
 ### Status sidebar: what every session is doing
 
 A right-sidebar panel lists sessions with a status dot, how long each has been in that state, and the stage it last reported (`case 41/88`). Inside an Orc you see its children. Everywhere else you see one row per Orc (`⚠ 1 need you · 4 working`) and then every independent session. Click a row to jump to that tab.
 
-![The status sidebar inside an Orc and in the Sessions overview](assets/media/sidebar.gif)
+![The status sidebar inside an Orc and in the Sessions overview](assets/media/feature-sidebar.gif)
 
 ### ⚠ needs you: blocked sessions stand out
 
 When a session stops on a question (`AskUserQuestion`) or a permission prompt, a hook puts ⚠ in front of its tab title, and the sidebar shows the row in red. The mark goes away when the session continues.
 
-![A child stops on a permission prompt; its tab and sidebar row turn red](assets/media/needs-you.gif)
+![A child stops on a permission prompt; its tab and sidebar row turn red](assets/media/feature-needs-you.gif)
 
 ### Jobs: small Markdown files in an inbox
 
 A job is a Markdown file with a header (`id`, `status`, `from`, `to`) and Task / Inputs / Output / Log sections. A hook shows each session its new or changed jobs when it starts and on every prompt. A child works only through its Orc. Work between Orcs and independent sessions goes through one session named `Sessions-Manager`.
 
-![A job created by the Orc appears in the child's next prompt](assets/media/jobs.gif)
+![A job created by the Orc appears in the child's next prompt](assets/media/feature-jobs.gif)
 
 ## Quick start
 
