@@ -132,23 +132,33 @@ def workspace_surfaces(ws):
     return res
 
 
+# claude flags that take a value as the next argument (`--flag value`).
+VALUE_FLAGS = {"--add-dir", "--agent", "--agents", "--append-system-prompt", "--autocompact", "--betas",
+               "--debug-file", "--effort", "--environment", "--fallback-model", "--file", "--input-format",
+               "--json-schema", "--max-budget-usd", "--mcp-config", "--model", "--output-format",
+               "--permission-mode", "--permission-prompts", "--plugin-dir", "--plugin-url",
+               "--remote-control-session-name-prefix", "--setting-sources", "--settings",
+               "--system-prompt", "--system-prompt-snapshot", "--tools",
+               "-n", "--name", "--session-id"}
+# Flags that describe the Orc's own session, not its children.
+OWN_FLAGS = {"-n", "--name", "-r", "--resume", "--session-id", "-c", "--continue", "-w", "--worktree",
+             "--from-pr", "--teleport", "--cloud", "--remote-control"}
+
+
 def orc_launch_args():
     """The Orc's own claude flags (e.g. permission mode), so children inherit them."""
     raw = os.environ.get("CMUX_AGENT_LAUNCH_ARGV_B64")
     if not raw:
         return []
     argv = [a for a in base64.b64decode(raw).decode().split("\0") if a][1:]
-    keep, skip = [], False
-    for a in argv:
-        if skip:
-            skip = False
-            continue
-        if a in ("-n", "--name", "-r", "--resume", "--session-id"):
-            skip = True
-            continue
-        if a in ("-c", "--continue") or not a.startswith("-"):
-            continue
-        keep.append(a)
+    keep, i = [], 0
+    while i < len(argv):
+        a = argv[i]
+        flag = a.split("=", 1)[0]
+        takes = "=" not in a and flag in VALUE_FLAGS and i + 1 < len(argv)
+        if a.startswith("-") and flag not in OWN_FLAGS:
+            keep += argv[i:i + 2] if takes else [a]
+        i += 2 if takes else 1  # a bare word that is not a flag's value is the prompt: drop it
     return keep
 
 
