@@ -33,7 +33,8 @@ done
 
 if [ -d ../docs ]; then
   mkdir -p ../docs/media
-  cp "$OUT/cmux-orc-promo.mp4" "$OUT/cmux-orc-promo-poster.png" ../docs/media/
-  for c in $CLIPS; do cp "$OUT/feature-$c.gif" ../docs/media/; done
+  cp "$OUT/cmux-orc-promo.mp4" ../docs/media/
+  ffmpeg -loglevel error -y -i "$OUT/cmux-orc-promo-poster.png" -q:v 4 ../docs/media/cmux-orc-promo-poster.jpg
+  for c in $CLIPS; do cp "$OUT/feature-$c.mp4" ../docs/media/; done
 fi
 ls -l "$OUT"

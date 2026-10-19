@@ -37,7 +37,7 @@ The cropped tab bar and sidebar, about 6 s: tabs spawn → stages tick → ⚠ a
 
 ## Outputs (assets/media/)
 `cmux-orc-promo.mp4`, `cmux-orc-promo-poster.png`, `cmux-orc-hero.gif` (+ `.mp4`), `feature-{orc-tabs,sidebar,needs-you,jobs}.{gif,mp4}`.
-`video/build.sh` also copies the promo, the poster and the four feature GIFs into `docs/media/` for the site.
+`video/build.sh` also copies the promo, a JPEG poster and the four feature mp4s into `docs/media/` for the site.
 Every shot is **rendered**. None is real footage.
 
 ## Rebuild
