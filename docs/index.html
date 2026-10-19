@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cmux-orc</title>
+<meta name="description" content="Run many Claude Code sessions in cmux without losing track of them: Orc tabs, a live status sidebar, a ⚠ when a session needs you, and jobs between sessions.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="cmux-orc: run many Claude Code sessions in cmux">
+<meta property="og:description" content="Orc tabs, a live status sidebar, a ⚠ when a session needs you, and jobs between sessions. A Claude Code plugin for cmux.">
+<meta property="og:url" content="https://yashmangal19.github.io/cmux-orc/">
+<meta property="og:image" content="https://yashmangal19.github.io/cmux-orc/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="cmux-orc: run many Claude Code sessions in cmux">
+<meta name="twitter:description" content="Orc tabs, a live status sidebar, a ⚠ when a session needs you, and jobs between sessions.">
+<meta name="twitter:image" content="https://yashmangal19.github.io/cmux-orc/og-card.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav wrap">
+  <a class="brand" href="#top" aria-label="cmux-orc home"><svg viewBox="0 0 32 32" aria-hidden="true"><g fill="currentColor"><circle cx="9" cy="16" r="5.5"/><rect x="18" y="6" width="10" height="4" rx="2"/><rect x="18" y="14" width="10" height="4" rx="2"/><rect x="18" y="22" width="10" height="4" rx="2"/></g></svg>cmux-orc</a>
+  <nav aria-label="Sections">
+    <a href="#demo">Demo</a>
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#faq">FAQ</a>
+    <a class="gh" href="https://github.com/yashMangal19/cmux-orc">GitHub</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="hero wrap" id="top">
+  <p class="eyebrow">A Claude Code plugin for <a href="https://cmux.com">cmux</a></p>
+  <h1>Run a team of Claude Code sessions.<br><span>See which one needs you.</span></h1>
+  <p class="lede">One <em>Orc</em> session starts and closes its children as tabs. A status sidebar shows what each one is doing. A <b class="warn">⚠</b> marks every session that waits on you.</p>
+
+  <div class="install" aria-labelledby="install-h">
+    <h2 id="install-h" class="install-h">Install in Claude Code</h2>
+    <ol class="cmds">
+      <li><code tabindex="0">/plugin marketplace add yashMangal19/cmux-orc</code><button class="copy" type="button" data-copy="/plugin marketplace add yashMangal19/cmux-orc" aria-label="Copy command 1">Copy</button></li>
+      <li><code tabindex="0">/plugin install cmux-orc@cmux-orc</code><button class="copy" type="button" data-copy="/plugin install cmux-orc@cmux-orc" aria-label="Copy command 2">Copy</button></li>
+      <li><code tabindex="0">/cmux-orc:sessions-setup</code><button class="copy" type="button" data-copy="/cmux-orc:sessions-setup" aria-label="Copy command 3">Copy</button></li>
+    </ol>
+    <div class="install-foot">
+      <button class="copy all" type="button" data-copy-all>Copy all 3</button>
+      <a class="btn" href="https://github.com/yashMangal19/cmux-orc">View on GitHub</a>
+    </div>
+    <p class="fine">macOS · cmux 0.64+ · python3 · MIT</p>
+  </div>
+</section>
+
+<section class="demo-sec" id="demo" aria-labelledby="demo-h">
+  <div class="wrap">
+    <h2 id="demo-h">Try it</h2>
+    <p class="sub">A simulation of one cmux window. Nothing here runs Claude. Start a child, answer the ⚠, send a job.</p>
+  </div>
+  <div class="wrap wide">
+    <div class="controls" role="group" aria-label="Demo controls">
+      <button type="button" class="ctl" id="d-spawn"><span aria-hidden="true">＋</span> Spawn a child</button>
+      <button type="button" class="ctl" id="d-job"><span aria-hidden="true">✉</span> Send a job to QA</button>
+      <button type="button" class="ctl warn-ctl" id="d-answer" disabled><span aria-hidden="true">⚠</span> Answer the ⚠</button>
+      <button type="button" class="ctl ghost" id="d-list">orc list</button>
+      <button type="button" class="ctl ghost" id="d-pause" aria-pressed="false">Pause</button>
+      <button type="button" class="ctl ghost" id="d-reset">Reset</button>
+    </div>
+    <div class="cmux" id="cmux">
+      <div class="cmux-bar" aria-hidden="true"><i></i><i></i><i></i><span>cmux</span></div>
+      <div class="cmux-body">
+        <aside class="ws-list" aria-label="Workspaces (left panel)">
+          <ul id="ws-list"></ul>
+        </aside>
+        <div class="center">
+          <div class="tabs" role="tablist" aria-label="Tabs in this workspace" id="tabs"></div>
+          <div class="term" id="term" role="log" aria-live="off" tabindex="0" aria-label="Terminal of the selected tab"></div>
+        </div>
+        <aside class="side" aria-label="orc-status sidebar">
+          <div class="side-head">orc-status</div>
+          <div id="side"></div>
+        </aside>
+      </div>
+      <div class="inbox" aria-label="Team inbox">
+        <div class="inbox-h"><span>~/.agentic/sessions/orcs/<b id="inbox-orc">Shop-Orc</b>/inbox/</span></div>
+        <ul id="inbox"><li class="empty">No jobs yet. Press “Send a job to QA”.</li></ul>
+      </div>
+    </div>
+    <p class="sr-only" aria-live="polite" id="d-live"></p>
+    <p class="demo-note">Rows and colours follow <a href="https://github.com/yashMangal19/cmux-orc/blob/main/cmux/sidebars/orc-status.js"><code>orc-status.js</code></a>. Tab titles and terminal output follow <a href="https://github.com/yashMangal19/cmux-orc/blob/main/bin/orc"><code>bin/orc</code></a>.</p>
+  </div>
+</section>
+
+<section class="wrap" id="features" aria-labelledby="feat-h">
+  <h2 id="feat-h">Four things it adds to cmux</h2>
+  <div class="features">
+    <article class="feat">
+      <div class="viz viz-orc" aria-hidden="true" data-gif="media/feature-orc-tabs.gif" data-alt="An Orc workspace pinned in cmux with its child tabs">
+        <div class="mini-ws"><span class="tile"></span>Shop-Orc <span class="pin">📌</span></div>
+        <div class="mini-tabs"><span class="on">Shop-Orc</span><span>QA · case 3/12</span><span>Docs · README</span></div>
+      </div>
+      <h3>Orcs</h3>
+      <p>An Orc is one Claude session that runs a team. Its workspace is one coloured, pinned tile in the left panel. Its children are tabs to the right of the Orc’s tab. The Orc starts, closes and reopens them, and asks you before each new one.</p>
+    </article>
+    <article class="feat">
+      <div class="viz viz-side" aria-hidden="true" data-gif="media/feature-sidebar.gif" data-alt="The orc-status sidebar listing children with status, time and stage">
+        <div class="row"><i style="background:#0A84FF"></i><b>QA</b><time>4m</time><small>case 41/88</small></div>
+        <div class="row"><i style="background:#34C759"></i><b>Docs</b><time>12m</time><small>idle</small></div>
+        <div class="row"><i style="background:#FF9F0A"></i><b>API</b><time>30s</time><small class="o">waiting</small></div>
+      </div>
+      <h3>Status sidebar</h3>
+      <p>A right-sidebar panel shows every child: status, how long it has been in that state, and its stage. Outside an Orc you see one row per Orc (“4 working · ⚠ 1 need you”) and every independent session.</p>
+    </article>
+    <article class="feat">
+      <div class="viz viz-warn" aria-hidden="true" data-gif="media/feature-needs-you.gif" data-alt="A child tab gets a ⚠ and its sidebar row turns red">
+        <div class="mini-tabs"><span>QA · case 41/88</span><span class="red">⚠ Docs · README</span></div>
+        <div class="row"><i style="background:#FF453A"></i><b>Docs</b><time>1m</time><small class="r">⚠ needs you · README</small></div>
+      </div>
+      <h3>⚠ needs you</h3>
+      <p>When a session stops on a question or a permission prompt, its tab gets a ⚠ and the sidebar row turns red. The mark clears when you answer.</p>
+    </article>
+    <article class="feat">
+      <div class="viz viz-job" aria-hidden="true" data-gif="media/feature-jobs.gif" data-alt="A job file moving from open to taken to done">
+        <div class="file"><span>Shop-QA--J-001-smoke-cases.md</span><em class="s-done">done</em></div>
+        <pre>## Output
+12/12 pass</pre>
+      </div>
+      <h3>Jobs between sessions</h3>
+      <p>A job is a small Markdown file in an inbox. A hook shows each session its new jobs. A child works only through its Orc. Work between Orcs and independent sessions goes through one <em>Sessions-Manager</em> session.</p>
+    </article>
+  </div>
+</section>
+
+<section class="wrap" id="video" aria-labelledby="video-h">
+  <h2 id="video-h">See it in a real cmux window</h2>
+    <!-- site.js swaps in the video once docs/media/cmux-orc-promo.mp4 exists. -->
+  <figure class="video-slot" id="video-slot" data-video="media/cmux-orc-promo.mp4" data-poster="media/cmux-orc-promo-poster.png">
+    <div class="video-ph">Video coming soon</div>
+  </figure>
+</section>
+
+<section class="wrap" id="how" aria-labelledby="how-h">
+  <h2 id="how-h">How it works</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Piece</th><th scope="col">Where</th><th scope="col">What it does</th></tr></thead>
+    <tbody>
+      <tr><th scope="row"><code>orc</code> CLI</th><td><code>bin/orc</code></td><td>Drives cmux through its CLI (<code>new-surface</code>, <code>rename-tab</code>, <code>workspace-action</code>, …) and keeps the registry.</td></tr>
+      <tr><th scope="row">Hook</th><td><code>hooks/orc-hook.py</code></td><td>Inbox notices on SessionStart and UserPromptSubmit. ⚠ on <code>AskUserQuestion</code> and on permission or elicitation notifications; cleared on PostToolUse, UserPromptSubmit and Stop.</td></tr>
+      <tr><th scope="row">Sidebar</th><td><code>cmux/sidebars/orc-status.js</code></td><td>A cmux Custom Sidebar. Reads cmux’s live workspace and agent data. Stage and ⚠ reach it through tab titles, because a sidebar cannot read files.</td></tr>
+      <tr><th scope="row">Skills</th><td><code>skills/orc</code>, <code>skills/sessions-manager</code>, <code>skills/sessions-setup</code></td><td>The rules for each role, and the first-time setup command.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="after-table">Children talk to their Orc with Claude Code’s <code>SendMessage</code>. The spawn prompt tells each child its name, its Orc, and to report its stage.</p>
+  <div class="usage">
+    <div>
+      <h3>Make an Orc</h3>
+<pre tabindex="0"><code>/rename Shop-Orc
+orc init Shop-Orc</code></pre>
+    </div>
+    <div>
+      <h3>Run children</h3>
+<pre tabindex="0"><code>orc spawn QA --cwd ~/shop --brief "Run the checkout smoke cases"
+orc list
+orc close QA
+orc resume QA</code></pre>
+    </div>
+    <div>
+      <h3>Report and hand off</h3>
+<pre tabindex="0"><code>orc stage "case 3/12"
+orc job new --to Shop-QA --title "Smoke cases"
+orc job set J-001 done "12/12 pass"</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="req" aria-labelledby="req-h">
+  <h2 id="req-h">Requirements</h2>
+  <ul class="req">
+    <li>macOS with <a href="https://cmux.com">cmux</a> 0.64 or later, with Custom Sidebars on (the default)</li>
+    <li>Claude Code with plugin support</li>
+    <li><code tabindex="0">python3</code> (standard library only)</li>
+    <li><code tabindex="0">git</code>, if you want <code>orc close</code> to check for uncommitted changes</li>
+  </ul>
+</section>
+
+<section class="wrap" id="faq" aria-labelledby="faq-h">
+  <h2 id="faq-h">FAQ</h2>
+  <div class="faq">
+    <details><summary>What does a child session cost?</summary><p>Each child is a full Claude Code session with its own context, so it uses tokens like any session you start yourself. That is why the <code>orc</code> skill tells the Orc to ask you before every <code>orc spawn</code>. Close children when their work is checked; <code>orc resume</code> brings one back if you need it again.</p></details>
+    <details><summary>Does it need cmux?</summary><p>Yes. Tabs, workspace colours, pinning, the ⚠ mark and the sidebar all go through cmux. <code>orc init</code>, <code>spawn</code>, <code>stage</code>, <code>close</code>, <code>resume</code> and <code>pane</code> stop with <code>not running inside a cmux terminal</code> outside it. The job commands and <code>orc list</code> only read and write files.</p></details>
+    <details><summary>What is “waiting” versus ⚠?</summary><p>“waiting” (orange) is cmux’s status for a session that finished its turn and is idle until you type. ⚠ (red) means the session stopped in the middle of its work on a question or a permission prompt, and nothing happens until you answer. Only ⚠ means a session is blocked on you.</p></details>
+    <details><summary>Does it work on Linux or Windows?</summary><p>No. cmux is a macOS app, and cmux-orc needs it. The CLI also uses <code>fcntl</code> file locks, which Windows does not have.</p></details>
+    <details><summary>Can I use it without Orcs?</summary><p>Yes. With the plugin installed, every session in cmux gets the ⚠ mark, and the sidebar’s Sessions overview lists independent sessions with their status. You can name one session <code>Sessions-Manager</code> and pass jobs between independent sessions. <code>orc stage</code> works only in an Orc tab or a child tab.</p></details>
+    <details><summary>Where does state live?</summary><p>In <code>~/.agentic/sessions</code> (set <code>CLAUDE_ORC_HOME</code> to move it): <code>registry.json</code> for Orcs and children, <code>inbox/</code> for top-level jobs, <code>orcs/&lt;Name&gt;/inbox/</code> for each team, <code>state/</code> for the hook’s per-session notes. cmux-orc also reads cmux’s <code>~/.cmuxterm/claude-hook-sessions.json</code> to map tabs to Claude sessions; it never writes it.</p></details>
+    <details><summary>Can I get a closed child back?</summary><p>Yes. <code>orc close</code> saves the child’s Claude session id before it closes the tab, and <code>orc resume &lt;Role&gt;</code> opens a new tab with <code>claude --resume &lt;id&gt;</code>. <code>orc close</code> refuses while the child’s folder has uncommitted git changes or while the child waits on you.</p></details>
+    <details><summary>Can a child use different Claude flags from the Orc?</summary><p>Yes. Anything after <code>--</code> goes to that child’s <code>claude</code> command: <code>orc spawn Review -- --model opus</code>. With no <code>--</code>, the child gets the Orc’s own flags, for example <code>--permission-mode</code> or <code>--model</code> and their values. Flags that belong to the Orc’s own session are left out: <code>--name</code>, <code>--resume</code>, <code>--continue</code>, <code>--session-id</code>, <code>--worktree</code>, <code>--from-pr</code>, <code>--teleport</code>, <code>--cloud</code> and <code>--remote-control</code>.</p></details>
+    <details><summary>Why is my stage in the tab title?</summary><p>A cmux sidebar has no file access; it can read workspace and tab data only. <code>orc stage "case 3/12"</code> renames the tab to <code>QA · case 3/12</code>, and the sidebar splits the title back into name and stage. If you rename the tab by hand, the sidebar loses the stage until the next <code>orc stage</code>.</p></details>
+    <details><summary>Does anything leave my machine?</summary><p>No. <code>orc</code> and the hook make no network calls. They run local <code>cmux</code> and <code>git</code> commands and read and write files under <code>~/.agentic/sessions</code>. (Children are Claude sessions, so they talk to Claude as usual.)</p></details>
+    <details><summary>The status panel disappeared.</summary><p>cmux 0.64 has no button for Custom sidebars in the right sidebar’s mode bar. Run <code>orc pane</code>.</p></details>
+    <details><summary>How do I uninstall?</summary><p>In Claude Code, <code>/plugin uninstall cmux-orc@cmux-orc</code>. Then remove the links that setup made, and the state if you no longer want it:</p><pre tabindex="0"><code>rm ~/.local/bin/orc ~/.config/cmux/sidebars/orc-status.js
+rm -rf ~/.agentic/sessions      # registry, inboxes and jobs</code></pre><p>Workspace colours and pins are cmux settings; change them in cmux.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>cmux-orc · MIT License</span>
+    <a href="https://github.com/yashMangal19/cmux-orc">GitHub</a>
+    <a href="https://github.com/yashMangal19/cmux-orc/blob/main/LICENSE">License</a>
+  </div>
+</footer>
+<script src="site.js" defer></script>
+<script src="demo.js" defer></script>
+</body>
+</html>
