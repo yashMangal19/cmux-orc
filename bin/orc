@@ -157,7 +157,7 @@ def orc_launch_args():
 def cmd_init(a):
     ws, sf = here()
     if not a.name.endswith("-Orc"):
-        die("an Orc's name must end in -Orc (e.g. Jarvis-Orc)")
+        die("an Orc's name must end in -Orc (e.g. Shop-Orc)")
     with registry() as data:
         if a.name in data["orcs"] and data["orcs"][a.name]["workspace"] != ws:
             die(f"{a.name} already exists in another workspace")
