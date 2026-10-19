@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/yashMangal19/cmux-orc/discussions
+    about: Ask how to use cmux-orc or talk about an idea before you file it.
+  - name: Report a security vulnerability
+    url: https://github.com/yashMangal19/cmux-orc/security/advisories/new
+    about: Report privately. Please do not open a public issue.
+  - name: cmux itself
+    url: https://cmux.com
+    about: Problems in cmux that are not caused by cmux-orc.

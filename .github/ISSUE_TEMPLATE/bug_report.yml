@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in orc, the hook or the sidebar does not work as the README says.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste exact error text.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. /rename Demo-Orc, then orc init Demo-Orc
+        2. orc spawn QA --cwd ~/demo --brief "..."
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part
+      multiple: true
+      options:
+        - orc CLI
+        - Hook (⚠ mark or inbox notice)
+        - Status sidebar
+        - Jobs
+        - Install / setup
+        - Skills
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "Output of: cmux --version; claude --version; python3 --version; sw_vers -productVersion"
+    validations:
+      required: true
+  - type: input
+    id: plugin
+    attributes:
+      label: cmux-orc version
+      description: From /plugin in Claude Code, or the commit if you run from a clone.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output
+      description: Relevant output of `orc list` or the failing command. Remove session names, paths or anything else you do not want public.
+      render: text
