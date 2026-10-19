@@ -95,3 +95,21 @@ X posts after the edits: 253 / 265 / 219 / 245 / 233 / 218 weighted chars, all �
 | 7 | Info | video/STORYBOARD.md | The last note says the README's `S-001` example for Shop-QA does not match. The README now uses J-001 correctly, so the note is stale. The feature clips run 6.0–7.0 s against the stated 4–6 s. | Delete the note and update the clip length. |
 | 8 | Info | local only | Chrome reports the site.js HEAD for the promo mp4 as `net::ERR_ABORTED` against python's http.server. The server logs 200 and the video still swaps in. | Re-check once Pages is live. |
 | 9 | Info | repo | The promo, poster and four GIFs are stored twice (assets/media and docs/media), about 9 MB extra in git history. | Accept it (Pages from /docs cannot reach assets/), or drop the GIFs from assets/media and point the README at docs/media. |
+
+## Re-check of abb3edb (2026-10-19)
+
+**Verdict: GO for merge.**
+
+Pass-2 findings 1–5 and 7 are fixed. #6 is accepted as an illustration.
+- **First load:** about 194 KB (was 5.2 MB). The feature clips load only near the viewport. All four play muted and looping at 1440. At 390, clips outside the viewport stay paused until scrolled to (Chrome's normal behaviour).
+- **Reduced motion:** no clips load, and the 4 still drawings stay.
+- **Poster:** a 61 KB JPEG.
+- **No errors:** no console errors or 4xx responses, and no horizontal overflow at 1440 or 390.
+- **Skip link:** now moves focus to `MAIN#main`.
+- **Text fixes:** rollup order, skill wording and the FAQ setup line are all correct.
+
+One new low finding, which does not block the merge:
+
+| # | Sev | Where | Problem | Suggested fix |
+|---|---|---|---|---|
+| 10 | Low | video/build.sh:41-45; STORYBOARD.md "Outputs" | build.sh still copies the poster PNG and the four feature GIFs into docs/media. A rebuild would put back the files the site no longer uses and leave the site's mp4s and JPEG poster stale. | Copy `feature-$c.mp4` and make the poster JPEG (for example `ffmpeg … -q:v 4 ../docs/media/cmux-orc-promo-poster.jpg`). Update the STORYBOARD sentence to match. |
