@@ -1,0 +1,14 @@
+{
+  "name": "cmux-orc",
+  "owner": {
+    "name": "Yash Mangal"
+  },
+  "plugins": [
+    {
+      "name": "cmux-orc",
+      "source": "./",
+      "description": "Run Claude Code orchestrators (Orcs) and their child sessions as tabs in cmux, with a live status sidebar."
+    }
+  ],
+  "description": "cmux-orc: Claude Code orchestrators and their child sessions as cmux tabs."
+}

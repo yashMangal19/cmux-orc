@@ -1,4 +1,4 @@
-// orc-status: claude-orc's right-sidebar panel.
+// orc-status: cmux-orc's right-sidebar panel.
 // In an Orc workspace (title ends in "-Orc") it lists that Orc's children with
 // status and stage; everywhere else it shows the Sessions overview: one rollup
 // row per Orc, then every independent session (waiting ones first).
@@ -35,7 +35,7 @@ function timeText(a, epoch) {
 }
 
 // "✳ QA · case 41/88" -> { name: "QA", stage: "case 41/88", blocked: false }
-// A leading "⚠" is claude-orc's hook marking a session blocked on a question or permission prompt.
+// A leading "⚠" is cmux-orc's hook marking a session blocked on a question or permission prompt.
 const BLOCKED = { color: "#FF453A", label: "needs you" };
 function splitTitle(title) {
   const raw = String(title ?? "");

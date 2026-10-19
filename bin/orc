@@ -8,6 +8,7 @@
   orc resume <Role>                         reopen a closed child in a new tab
   orc list [--json]                         show Orcs, children and stages
   orc pane                                  show the status panel in cmux's right sidebar
+  orc setup                                 link orc + the sidebar into place (first install)
   orc job new --to <Session> --title <text> [--task TEXT] [--from NAME]
   orc job set <ID> <open|taken|blocked|done> [note]
   orc job list [--all]                      open jobs in every inbox
@@ -321,6 +322,33 @@ def cmd_list(a):
             print(f"   ● {name}  {state}  {c.get('stage') or (sess.get('lastBody') or '')[:60]}")
 
 
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def cmd_setup(a):
+    """Link the CLI and the sidebar from this checkout (or plugin dir) into place, then show the panel."""
+    links = [(Path("~/.local/bin/orc").expanduser(), ROOT / "bin" / "orc"),
+             (Path("~/.config/cmux/sidebars/orc-status.js").expanduser(),
+              ROOT / "cmux" / "sidebars" / "orc-status.js")]
+    for dst, src in links:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.is_symlink() or dst.exists():
+            if dst.resolve() == src.resolve():
+                continue
+            dst.unlink()
+        dst.symlink_to(src)
+        print(f"linked {dst} -> {src}")
+    (HOME / "inbox").mkdir(parents=True, exist_ok=True)
+    if not a.quiet:
+        if str(Path("~/.local/bin").expanduser()) not in os.environ.get("PATH", "").split(":"):
+            print("note: add ~/.local/bin to PATH so `orc` resolves")
+        if os.environ.get("CMUX_WORKSPACE_ID"):
+            cmux("sidebar", "validate", "orc-status")
+            cmd_pane(a)
+        else:
+            print("not inside cmux: run `orc pane` from a cmux terminal to show the sidebar")
+
+
 def cmd_pane(a):
     # cmux 0.64 has no Custom button in the right sidebar's mode bar, so this is the way back.
     cmux("right-sidebar", "set", "custom", "orc-status", "--no-focus")
@@ -445,6 +473,9 @@ def main():
     s.add_argument("--force", action="store_true", help="skip safety checks (user's call only)")
     s.set_defaults(fn=cmd_close)
     s = sub.add_parser("resume"); s.add_argument("role"); s.set_defaults(fn=cmd_resume)
+    s = sub.add_parser("setup", help="link orc + the sidebar into place and show the panel")
+    s.add_argument("--quiet", action="store_true", help="links only (used by the hook)")
+    s.set_defaults(fn=cmd_setup)
     s = sub.add_parser("pane", help="show the orc-status panel in the right sidebar")
     s.set_defaults(fn=cmd_pane)
     s = sub.add_parser("list"); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_list)

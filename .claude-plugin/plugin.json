@@ -1,5 +1,5 @@
 {
-  "name": "claude-orc",
+  "name": "cmux-orc",
   "version": "0.1.0",
   "description": "Run Claude Code orchestrators (Orcs) and their child sessions as tabs in cmux: spawn, stage, close, resume, with a live status sidebar.",
   "author": { "name": "Yash Mangal" },

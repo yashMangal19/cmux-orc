@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""claude-orc hook: inbox notices and the ⚠ "needs you" tab marker.
+"""cmux-orc hook: inbox notices and the ⚠ "needs you" tab marker.
 
   SessionStart, UserPromptSubmit  show this session its new or changed jobs
   PreToolUse(AskUserQuestion), Notification(permission/elicitation)
@@ -37,7 +37,22 @@ def session_name(state, transcript):
         state["offset"] = size
     except OSError:
         pass
+    if not state.get("name"):
+        state["name"] = launch_name()
     return state.get("name", "")
+
+
+def launch_name():
+    """`claude -n <name>` is written to the transcript only after SessionStart; cmux passes argv in env."""
+    import base64
+    raw = os.environ.get("CMUX_AGENT_LAUNCH_ARGV_B64")
+    if not raw:
+        return ""
+    argv = base64.b64decode(raw).decode("utf-8", "ignore").split("\0")
+    for i, arg in enumerate(argv[:-1]):
+        if arg in ("-n", "--name"):
+            return argv[i + 1]
+    return ""
 
 
 def registry():
@@ -102,6 +117,18 @@ def set_mark(state, on, name, reg):
         cmux("tab-action", "--workspace", ws, "--surface", surface, "--action", "clear-name")
 
 
+def relink_plugin():
+    """After a plugin update the versioned plugin dir moves; point the orc and sidebar links at it."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not root:
+        return
+    sidebar = Path("~/.config/cmux/sidebars/orc-status.js").expanduser()
+    if sidebar.is_symlink() and not sidebar.exists() or \
+            sidebar.is_symlink() and not str(sidebar.resolve()).startswith(str(Path(root).resolve())):
+        subprocess.run([sys.executable, str(Path(root) / "bin" / "orc"), "setup", "--quiet"],
+                       capture_output=True, timeout=5)
+
+
 def main():
     data = json.load(sys.stdin)
     event = data.get("hook_event_name", "")
@@ -117,6 +144,7 @@ def main():
 
     if event == "SessionStart":
         state["shown"] = {}
+        relink_plugin()
     if event in ("PreToolUse",) and data.get("tool_name") == "AskUserQuestion":
         set_mark(state, True, name, reg)
     elif event == "Notification" and (data.get("notification_type") in BLOCKING_NOTIFICATIONS
