@@ -34,13 +34,18 @@ function timeText(a, epoch) {
   return since ? fmtAgo(epoch - since) : "";
 }
 
-// "✳ QA · case 41/88" -> { name: "QA", stage: "case 41/88" }
+// "✳ QA · case 41/88" -> { name: "QA", stage: "case 41/88", blocked: false }
+// A leading "⚠" is claude-orc's hook marking a session blocked on a question or permission prompt.
+const BLOCKED = { color: "#FF453A", label: "needs you" };
 function splitTitle(title) {
-  const t = String(title ?? "").replace(/^[^\w~./]+\s*/, "");
+  const raw = String(title ?? "");
+  const t = raw.replace(/^[^\w~./]+\s*/, "");
   const i = t.indexOf(" · ");
-  return i < 0 ? { name: t, stage: "" } : { name: t.slice(0, i), stage: t.slice(i + 3) };
+  const blocked = raw.trimStart().startsWith("⚠");
+  return i < 0 ? { name: t, stage: "", blocked } : { name: t.slice(0, i), stage: t.slice(i + 3), blocked };
 }
 
+const blockedWs = (w) => (w.tabs ?? []).some((t) => splitTitle(t.title).blocked);
 const agentFor = (w, tab) => (w.agents ?? []).find((a) => a.surfaceId && a.surfaceId === tab.surfaceId);
 
 // One flat keyed list; the kind is encoded in the key so row templates stay stable.
@@ -59,6 +64,7 @@ const entries = computed(() => {
       out.push({
         key: "c:" + tab.id, kind: "row", wsId: sel.id, surfaceId: tab.surfaceId,
         name: t.name || a?.name || "tab", stage: t.stage, agent: a, focused: tab.focused, child: true,
+        blocked: t.blocked,
       });
     }
     if (tabs.length <= 1) out.push({ key: "e:" + sel.id, kind: "note", text: "No children yet. The Orc starts one with `orc spawn`." });
@@ -72,7 +78,9 @@ const entries = computed(() => {
   for (const w of orcs) {
     const c = { working: 0, needs_input: 0, idle: 0 };
     for (const a of w.agents ?? []) if (c[a.status] !== undefined) c[a.status] += 1;
+    const blocked = (w.tabs ?? []).filter((t) => splitTitle(t.title).blocked).length;
     const bits = [];
+    if (blocked) bits.push("⚠ " + blocked + " need you");
     if (c.working) bits.push(c.working + " working");
     if (c.needs_input) bits.push(c.needs_input + " waiting");
     if (c.idle) bits.push(c.idle + " idle");
@@ -84,7 +92,8 @@ const entries = computed(() => {
 
   // Waiting sessions sort first; an Orc's waiting children stay inside the Orc row's count.
   const solo = all.filter((w) => !isOrc(w) && !isManager(w) && (w.agents ?? []).length)
-    .sort((x, y) => statusOf(x.agents[0]).rank - statusOf(y.agents[0]).rank);
+    .sort((x, y) => statusOf(x.agents[0]).rank - statusOf(y.agents[0]).rank)
+    .sort((x, y) => Number(blockedWs(y)) - Number(blockedWs(x)));
   if (solo.length) out.push({ key: "s:solo", kind: "section", text: "SESSIONS" });
   for (const w of solo) {
     const a = w.agents[0];
@@ -92,6 +101,7 @@ const entries = computed(() => {
     out.push({
       key: "i:" + w.id, kind: "row", wsId: w.id, surfaceId: a.surfaceId,
       name: splitTitle(w.title).name, stage: splitTitle(tab?.title).stage, agent: a, focused: false,
+      blocked: splitTitle(tab?.title).blocked,
     });
   }
   return out;
@@ -127,15 +137,16 @@ function sessionRow(e) {
   const a = () => e().agent;
   return VStack({ spacing: 2 }, [
     HStack({ spacing: 6 }, [
-      Circle({ size: 7 }).fill(() => statusOf(a()).color),
+      Circle({ size: 7 }).fill(() => (e().blocked ? BLOCKED.color : statusOf(a()).color)),
       Text(() => e().name).font(12).weight("medium").lineLimit(1).truncation("tail"),
       Spacer(),
       Text(() => timeText(a(), data.clock()?.epoch ?? 0)).font(10).monospaced().color("tertiary")
         .frame({ minWidth: 52 }),  // .fixedSize() is missing in cmux 0.64
     ]),
-    Text(() => e().stage || (e().child && a()?.status === "needs_input" ? "waiting" : statusOf(a()).label))
+    Text(() => (e().blocked ? "⚠ needs you" + (e().stage ? " · " + e().stage : "")
+      : e().stage || (e().child && a()?.status === "needs_input" ? "waiting" : statusOf(a()).label)))
       .font(11).lineLimit(2).truncation("tail")
-      .color(() => (a()?.status === "needs_input" ? "#FF9F0A" : e().stage ? "secondary" : "tertiary"))
+      .color(() => (e().blocked ? BLOCKED.color : a()?.status === "needs_input" ? "#FF9F0A" : e().stage ? "secondary" : "tertiary"))
       .paddingLeading(13),
   ])
     .paddingHorizontal(10).paddingVertical(5)

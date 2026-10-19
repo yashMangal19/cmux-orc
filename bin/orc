@@ -8,6 +8,12 @@
   orc resume <Role>                         reopen a closed child in a new tab
   orc list [--json]                         show Orcs, children and stages
   orc pane                                  show the status panel in cmux's right sidebar
+  orc job new --to <Session> --title <text> [--task TEXT] [--from NAME]
+  orc job set <ID> <open|taken|blocked|done> [note]
+  orc job list [--all]                      open jobs in every inbox
+
+Jobs to an Orc's child go to that Orc's team inbox; every other job goes to
+the top-level inbox that Sessions-Manager runs.
 
 State lives in $CLAUDE_ORC_HOME (default ~/.agentic/sessions)/registry.json.
 Stdlib only, so it installs anywhere cmux + python3 run.
@@ -321,6 +327,110 @@ def cmd_pane(a):
     print("right sidebar: orc-status")
 
 
+# ---------------------------------------------------------------- jobs
+
+JOB_STATES = ("open", "taken", "blocked", "done")
+
+
+def load_registry():
+    return json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"orcs": {}}
+
+
+def inboxes(data):
+    """[(dir, id_prefix)]: the top-level inbox, then each Orc's team inbox."""
+    res = [(HOME / "inbox", "S")]
+    for name, orc in data["orcs"].items():
+        res.append((Path(orc.get("inbox") or HOME / "orcs" / name / "inbox").expanduser(),
+                    orc.get("job_prefix", "J")))
+    return res
+
+
+def inbox_for(data, target):
+    for name, orc in data["orcs"].items():
+        if target in orc["children"]:
+            return (Path(orc.get("inbox") or HOME / "orcs" / name / "inbox").expanduser(),
+                    orc.get("job_prefix", "J"), name)
+    return HOME / "inbox", "S", "Sessions-Manager"
+
+
+def my_name(data):
+    sf = os.environ.get("CMUX_SURFACE_ID")
+    for orc_name, orc in data["orcs"].items():
+        if orc["surface"] == sf:
+            return orc_name
+        for name, c in orc["children"].items():
+            if c["surface"] == sf:
+                return name
+    return session_name(session_for_surface(sf)) if sf else None
+
+
+def job_files(data):
+    for d, _ in inboxes(data):
+        if d.is_dir():
+            yield from sorted(d.glob("*--*.md"))
+
+
+def job_header(text):
+    return dict(re.findall(r"^([a-z-]+):[ \t]*(.*)$", text.split("\n## ", 1)[0], re.M))
+
+
+def cmd_job_new(a):
+    data = load_registry()
+    d, prefix, owner = inbox_for(data, a.to)
+    d.mkdir(parents=True, exist_ok=True)
+    nums = [int(m.group(1)) for f in d.rglob("*.md")
+            if (m := re.search(rf"^id: {prefix}-(\d+)", f.read_text(errors="ignore"), re.M))]
+    jid = f"{prefix}-{max(nums, default=0) + 1:03d}"
+    slug = re.sub(r"[^a-z0-9]+", "-", a.title.lower()).strip("-")[:40]
+    path = d / f"{a.to}--{jid}-{slug}.md"
+    sender = a.sender or my_name(data) or "unknown"
+    path.write_text(f"""id: {jid}
+status: open
+from: {sender}
+to: {a.to}
+assigned-by: {owner}
+created: {time.strftime("%Y-%m-%d %H:%M")}
+
+# {a.title}
+
+## Task
+{a.task or "(fill in)"}
+
+## Inputs
+
+## Output
+
+## Log
+""")
+    print(f"{jid} {path}")
+    print(f"next: SendMessage to \"{a.to}\" saying {jid} is in its inbox (if it is running).")
+
+
+def cmd_job_set(a):
+    data = load_registry()
+    for f in job_files(data):
+        text = f.read_text(errors="ignore")
+        if job_header(text).get("id") != a.id:
+            continue
+        text = re.sub(r"^status:.*$", f"status: {a.status}", text, count=1, flags=re.M)
+        who = my_name(data) or "unknown"
+        note = " ".join(a.note)
+        text = text.rstrip("\n") + f"\n- {time.strftime('%Y-%m-%d %H:%M')} {who}: {a.status}" \
+            + (f" — {note}" if note else "") + "\n"
+        f.write_text(text)
+        print(f"{a.id}: {a.status}  ({f})")
+        return
+    die(f"no job {a.id}")
+
+
+def cmd_job_list(a):
+    for f in job_files(load_registry()):
+        h = job_header(f.read_text(errors="ignore"))
+        if h.get("status", "open").split()[0] == "done" and not a.all:
+            continue
+        print(f"{h.get('id', '?'):7} {h.get('status', 'open'):8} {h.get('from', '?')[:24]:24} → {h.get('to', '?')}  {f}")
+
+
 def main():
     p = argparse.ArgumentParser(prog="orc", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -338,6 +448,12 @@ def main():
     s = sub.add_parser("pane", help="show the orc-status panel in the right sidebar")
     s.set_defaults(fn=cmd_pane)
     s = sub.add_parser("list"); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_list)
+    job = sub.add_parser("job").add_subparsers(dest="jobcmd", required=True)
+    s = job.add_parser("new"); s.add_argument("--to", required=True); s.add_argument("--title", required=True)
+    s.add_argument("--task"); s.add_argument("--from", dest="sender"); s.set_defaults(fn=cmd_job_new)
+    s = job.add_parser("set"); s.add_argument("id"); s.add_argument("status", choices=JOB_STATES)
+    s.add_argument("note", nargs="*"); s.set_defaults(fn=cmd_job_set)
+    s = job.add_parser("list"); s.add_argument("--all", action="store_true"); s.set_defaults(fn=cmd_job_list)
     argv = sys.argv[1:]
     extra = argv[argv.index("--") + 1:] if "--" in argv else []  # spawn: flags for claude
     a = p.parse_args(argv[:len(argv) - len(extra) - (1 if extra or "--" in argv else 0)])

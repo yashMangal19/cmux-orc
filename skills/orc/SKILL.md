@@ -17,16 +17,23 @@ An Orc is one cmux workspace: the Orc's tab first, its children as tabs to the r
 | Orc | `orc resume <Role>` | Reopens a closed child with its conversation. |
 | Both | `orc stage "<text>"` | Records what this session is doing now and shows it in the tab title (≤ 80 chars). |
 | Both | `orc list` | Orcs, children, status, stage. |
+| Both | `orc job new --to <Session> --title <text> [--task <text>]` | Writes a job file. To an Orc's child it goes to that Orc's team inbox; anything else goes to the top-level inbox. Then SendMessage the target that the job is waiting. |
+| Both | `orc job set <ID> <taken\|blocked\|done> [note]` | Sets the job's status and appends a Log line. |
+| Both | `orc job list [--all]` | Open jobs in every inbox. |
+
+A hook shows each session its new jobs when it starts and on every prompt, and puts "⚠" on a tab while its session waits on a question or a permission prompt.
 
 ## Orc rules
 
 - Ask the user before every `orc spawn`. Each child is a full Claude session and costs tokens.
 - Close a child yourself once you have checked its output against what you asked for. Never pass `--force`; that flag is the user's.
 - Spawn into folders the user already trusts in Claude Code. A new folder stops the child at the trust prompt until someone answers it.
-- Work for a session outside your team goes to `Sessions-Manager` (SendMessage), never straight to that session.
+- Assign team work with `orc job new --to <child>` plus a SendMessage doorbell. Close the job (`orc job set <ID> done`) only after checking its Output.
+- Work for a session outside your team goes to `Sessions-Manager` (SendMessage: what + why), never straight to that session.
 
 ## Child rules
 
 - Talk only to your Orc (SendMessage to its name). Never ask another session for work directly.
+- On a job: `orc job set <ID> taken`, work, put the result in its `## Output`, then `orc job set <ID> done` (or `blocked <reason>`). Message your Orc at each change.
 - Run `orc stage "<text>"` at each milestone: started, every meaningful step ("case 41/88"), blocked (with the reason), done.
 - When finished, tell your Orc what you delivered and where, then stop. Your Orc closes the tab.
