@@ -7,6 +7,7 @@
   orc close <Role> [--force]                close a finished child, keep it resumable
   orc resume <Role>                         reopen a closed child in a new tab
   orc list [--json]                         show Orcs, children and stages
+  orc pane                                  show the status panel in cmux's right sidebar
 
 State lives in $CLAUDE_ORC_HOME (default ~/.agentic/sessions)/registry.json.
 Stdlib only, so it installs anywhere cmux + python3 run.
@@ -314,6 +315,12 @@ def cmd_list(a):
             print(f"   ● {name}  {state}  {c.get('stage') or (sess.get('lastBody') or '')[:60]}")
 
 
+def cmd_pane(a):
+    # cmux 0.64 has no Custom button in the right sidebar's mode bar, so this is the way back.
+    cmux("right-sidebar", "set", "custom", "orc-status", "--no-focus")
+    print("right sidebar: orc-status")
+
+
 def main():
     p = argparse.ArgumentParser(prog="orc", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -328,6 +335,8 @@ def main():
     s.add_argument("--force", action="store_true", help="skip safety checks (user's call only)")
     s.set_defaults(fn=cmd_close)
     s = sub.add_parser("resume"); s.add_argument("role"); s.set_defaults(fn=cmd_resume)
+    s = sub.add_parser("pane", help="show the orc-status panel in the right sidebar")
+    s.set_defaults(fn=cmd_pane)
     s = sub.add_parser("list"); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_list)
     argv = sys.argv[1:]
     extra = argv[argv.index("--") + 1:] if "--" in argv else []  # spawn: flags for claude

@@ -150,7 +150,7 @@ function sessionRow(e) {
       Text(() => e().name).font(12).weight("medium").lineLimit(1).truncation("tail"),
       Spacer(),
       Text(() => timeText(a(), data.clock()?.epoch ?? 0)).font(10).monospaced().color("tertiary")
-        .fixedSize().layoutPriority(2),
+        .frame({ minWidth: 52 }),  // .fixedSize() is missing in cmux 0.64
     ]),
     Text(() => e().stage || (e().child && a()?.status === "needs_input" ? "waiting" : statusOf(a()).label))
       .font(11).lineLimit(2).truncation("tail")
