@@ -21,7 +21,7 @@ Every claim here matches the README FAQ. If the README changes, change these too
 > An "Orc" is a normal Claude session whose name ends in -Orc.
 >
 > `orc init Shop-Orc` colours and pins its workspace.
-> `orc spawn QA --brief "…"` opens a tab and starts a child with that brief. The Orc asks you before each spawn, because each child costs tokens.
+> `orc spawn QA --brief "…"` opens a tab and starts a child with that brief. Its skill has it ask you before each spawn, because each child costs tokens.
 
 **3/6**: attach `assets/media/feature-sidebar.gif`
 
@@ -62,7 +62,7 @@ Attach: `assets/media/cmux-orc-promo.mp4` (poster `cmux-orc-promo-poster.png`). 
 >
 > cmux-orc is a small open-source Claude Code plugin that does three things:
 >
-> • One session (an "Orc") starts, closes and reopens child sessions as tabs in its cmux workspace, and asks before each one.
+> • One session (an "Orc") starts, closes and reopens child sessions as tabs in its cmux workspace. Its skill has it ask you before each one.
 > • A sidebar panel shows every session's status, how long it has been in that state, and the stage it reported ("case 41/88").
 > • When a session is blocked on a question or a permission prompt, its tab gets a ⚠ and its row turns red. That is separate from "finished a turn", which cmux already shows.
 >
@@ -78,7 +78,7 @@ Attach: `assets/media/cmux-orc-promo.mp4` (poster `cmux-orc-promo-poster.png`). 
 
 ## Show HN
 
-**Title:** Show HN: cmux-orc – Run Claude Code child sessions as cmux tabs, see which is blocked
+**Title:** Show HN: cmux-orc – Run Claude Code sessions as cmux tabs, see which is blocked
 
 **URL:** https://github.com/yashMangal19/cmux-orc
 
@@ -117,7 +117,7 @@ Attach: `assets/media/cmux-orc-promo.mp4` (poster `cmux-orc-promo-poster.png`). 
 >
 > **cmux-orc** lets one session (an "Orc") run a team:
 >
-> - `orc spawn QA --brief "Run the checkout smoke cases"` opens a tab and starts a child with that brief. The Orc asks you first.
+> - `orc spawn QA --brief "Run the checkout smoke cases"` opens a tab and starts a child with that brief. The Orc's skill has it ask you first.
 > - Children report `orc stage "case 3/12"`, which shows in the tab title and in a sidebar panel with status and time.
 > - When any session stops on a question or a permission prompt, its tab gets ⚠ and the sidebar row goes red. Plain "finished its turn" stays orange, so you can tell them apart.
 > - `orc close` keeps the session id; `orc resume` brings the child back with its conversation.

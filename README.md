@@ -126,7 +126,7 @@ Children talk to their Orc with Claude Code's `SendMessage`. The spawn prompt te
 Each child is a full Claude Code session with its own context, so it uses tokens like any session you start yourself. That is why the `orc` skill tells the Orc to ask you before every `orc spawn`. Close children when their work is checked; `orc resume` brings one back if you need it again.
 
 **Does it need cmux?**
-Yes. Tabs, workspace colours, pinning, the ⚠ mark and the sidebar all go through cmux. `orc init`, `spawn`, `stage`, `close`, `resume` and `pane` stop with `not running inside a cmux terminal` outside it. The job commands and `orc list` only read and write files.
+Yes. Tabs, workspace colours, pinning, the ⚠ mark and the sidebar all go through cmux. `orc init`, `spawn`, `stage`, `close`, `resume` and `pane` stop with `not running inside a cmux terminal` outside it. `orc setup` makes its links anywhere, but shows the panel only inside cmux. The job commands and `orc list` only read and write files.
 
 **What is "waiting" versus ⚠?**
 "waiting" (orange) is cmux's status for a session that finished its turn and is idle until you type. ⚠ (red) means the session stopped in the middle of its work on a question or a permission prompt, and nothing happens until you answer. Only ⚠ means a session is blocked on you.

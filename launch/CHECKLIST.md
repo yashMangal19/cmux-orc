@@ -18,9 +18,9 @@ Everything here that publishes, pushes or changes GitHub settings is done by the
 - [ ] **Website:** the GitHub Pages URL (after Pages is on), else blank.
 - [ ] **Topics:** `claude-code`, `claude-code-plugin`, `cmux`, `ai-agents`, `multi-agent`, `orchestration`, `developer-tools`, `macos`, `terminal`, `python`.
 - [ ] **Social preview:** Settings → General → Social preview → upload `assets/brand/og-card.png`.
-- [ ] **Features:** Issues on, Discussions on (the issue template's contact link points there), Wiki off.
+- [ ] **Features:** Issues on, Discussions on, Wiki off. **Gate:** Discussions must be on before launch. The issue template's "Questions and ideas" link points there and is a 404 until then.
 - [ ] **Pages:** Settings → Pages → deploy from the branch and folder that Web names. Open the URL and check it.
-- [ ] **Security:** Settings → Security → Private vulnerability reporting on (SECURITY.md points to it).
+- [ ] **Security:** Settings → Security → Private vulnerability reporting on. **Gate:** must be on before launch. SECURITY.md and the issue template link to it, and the link does not work until then.
 
 ## T-0: release
 

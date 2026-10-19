@@ -30,7 +30,7 @@ claude --plugin-dir /path/to/cmux-orc
 
 ## Test without touching your real state
 
-Point `CLAUDE_ORC_HOME` at a scratch folder. Every `orc` command and the hook then read and write only there.
+Point `CLAUDE_ORC_HOME` at a scratch folder. `orc` and the hook then keep their state (registry, inboxes, jobs, hook notes) only there. Two things still reach outside it: `orc setup` links into `~/.local/bin` and `~/.config/cmux/sidebars`, and the cmux commands (`init`, `spawn`, `stage`, `close`, `resume`, `pane`) act on your real cmux. They also read cmux's `~/.cmuxterm/claude-hook-sessions.json` and Claude Code transcripts, without writing them.
 
 ```
 export CLAUDE_ORC_HOME="$(mktemp -d)"
