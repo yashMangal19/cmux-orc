@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """orc: run a Claude Code orchestrator ("Orc") and its child sessions as tabs in cmux.
 
-  orc init <Name> [--colour C] [--adopt]   make the current cmux workspace an Orc
+  orc init <Name>-Orc [--colour C] [--adopt]  make the current cmux workspace an Orc
   orc spawn <Role> [--cwd DIR] [--brief FILE|TEXT] [-- claude args]
-  orc stage <text>                          (child) report what you are doing now
+  orc stage <text>                          report what this Orc or child is doing now
   orc close <Role> [--force]                close a finished child, keep it resumable
   orc resume <Role>                         reopen a closed child in a new tab
   orc list [--json]                         show Orcs, children and stages
   orc pane                                  show the status panel in cmux's right sidebar
-  orc setup                                 link orc + the sidebar into place (first install)
+  orc setup [--quiet]                       link orc + the sidebar into place (first install)
   orc job new --to <Session> --title <text> [--task TEXT] [--from NAME]
   orc job set <ID> <open|taken|blocked|done> [note]
   orc job list [--all]                      open jobs in every inbox
@@ -42,8 +42,11 @@ def now():
 
 
 def cmux(*args, check=True):
-    r = subprocess.run([CMUX, "--id-format", "uuids", *args], capture_output=True, text=True,
-                       env={**os.environ, "CMUX_QUIET": "1"})
+    try:
+        r = subprocess.run([CMUX, "--id-format", "uuids", *args], capture_output=True, text=True,
+                           env={**os.environ, "CMUX_QUIET": "1"})
+    except FileNotFoundError:
+        die(f"cmux not found ({CMUX}); run this inside a cmux terminal")
     if check and r.returncode != 0:
         die(f"cmux {' '.join(args)} failed: {r.stderr.strip() or r.stdout.strip()}")
     return r.stdout.strip()
@@ -321,6 +324,8 @@ def cmd_list(a):
         print(json.dumps(data, indent=2))
         return
     hs = hook_sessions()
+    if not data["orcs"]:
+        print("no Orcs yet; in a cmux tab named <Name>-Orc, run `orc init <Name>-Orc`")
     for orc_name, orc in data["orcs"].items():
         print(f"■ {orc_name}  ({orc['colour']})" + (f"  — {orc['stage']}" if orc.get("stage") else ""))
         for name, c in orc["children"].items():
@@ -361,6 +366,7 @@ def cmd_setup(a):
 
 def cmd_pane(a):
     # cmux 0.64 has no Custom button in the right sidebar's mode bar, so this is the way back.
+    here()
     cmux("right-sidebar", "set", "custom", "orc-status", "--no-focus")
     print("right sidebar: orc-status")
 
