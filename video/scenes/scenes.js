@@ -208,7 +208,7 @@ function transcript(sf, E) {
     out.push(L.tool(E.spawn[2] + 1.0, "Write", "src/routes/order-status.ts"), L.out(E.spawn[2] + 1.5, "Wrote 48 lines"));
     orcStageLines("API", "sf-api");
     out.push(L.tool(E.apiWarn - 0.3, "Bash", "npm run db:migrate"));
-    out.push({ t: E.apiWarn, until: E.apiAnswer, html: `<div class="box"><b>Bash command</b>\n\n  npm run db:migrate\n  <span class="dim">Run the pending database migrations</span>\n\nDo you want to proceed?\n<span class="sel1">❯ 1. Yes</span>\n  2. Yes, and don't ask again for <b>npm run db:migrate</b> commands in /Users/demo/shop\n  3. No, and tell Claude what to do differently <span class="dim">(esc)</span></div>` });
+    out.push({ t: E.apiWarn, until: E.apiAnswer, html: `<div class="box"><b>Bash command</b>\n\n  npm run db:migrate\n  <span class="dim">Run the pending database migrations</span>\n\nDo you want to proceed?\n<span class="sel1" id="opt-yes">❯ 1. Yes</span>\n  2. Yes, and don't ask again for <b>npm run db:migrate</b> commands in /Users/demo/shop\n  3. No, and tell Claude what to do differently <span class="dim">(esc)</span></div>` });
     out.push(L.out(E.apiAnswer + 0.3, "3 migrations applied"));
   } else if (sf === "sf-docs") {
     out.push(head("~/shop"), briefLine("Docs", ROLES[1][2]));
@@ -217,7 +217,9 @@ function transcript(sf, E) {
     out.push(head("~/blog"), L.raw(PAST, `<div class="user">&gt; Draft an outline for the next post</div>`),
       L.tool(PAST, "Read", "posts/ideas.md"), L.out(PAST, "Read 64 lines"), L.msg(PAST, "Drafting the outline: three sections, one example each…"));
   }
-  return out.filter((x) => x.t > -1e8 - 1 || x.t === PAST).sort((a, b) => a.t - b.t);
+  // anything before the clip starts collapses to PAST; the stable sort keeps transcript order
+  for (const x of out) if (x.t < -1e8) x.t = PAST;
+  return out.sort((a, b) => a.t - b.t);
 }
 
 function termHTML(sf, E, t) {
@@ -260,7 +262,7 @@ function leftHTML(all, t) {
     const fl = w.flashAt !== undefined && t >= w.flashAt && t < w.flashAt + 1.2;
     return `<div class="ws ${w.selected ? "sel" : ""}" id="ws-${w.id}" style="${w.color ? `background:${w.color}${w.selected ? "40" : "22"};` : ""}${fl ? `box-shadow:0 0 0 ${2 + 3 * Math.sin((t - w.flashAt) / 1.2 * Math.PI)}px ${w.color};` : ""}">
       <div class="bar" style="background:${w.color ?? "transparent"}"></div>
-      <div class="tt">${esc(w.title)}${w.pinned ? `<span class="pin">📌</span>` : ""}</div>
+      <div class="tt">${esc(w.title)}${w.pinned ? `<span class="pin"><svg viewBox="0 0 16 16" width="13" height="13"><path d="M10.5 1.5l4 4-2 1-2.5 2.5.5 3.5-1.5 1.5-3-3-3.5 3.5-1-1L5 10 2 7l1.5-1.5L7 6l2.5-2.5z" fill="currentColor"/></svg></span>` : ""}</div>
       <div class="sub">${esc(w.sub)}</div></div>`;
   };
   return (pinned.length ? `<div class="lsec">PINNED</div>` + pinned.map(tile).join("") : "")
@@ -309,7 +311,7 @@ function titleCard(t, t0, t1) {
     <div style="display:flex;align-items:center;gap:36px;transform:translateY(${rise}px)">
       <div style="width:150px;height:150px;color:var(--orc-accent)">${LOGO}</div>
       <div style="font-size:150px;font-weight:700;letter-spacing:-0.035em">cmux-orc</div></div>
-    <div style="margin-top:34px;font-size:52px;color:var(--orc-text-muted);opacity:${clamp((t - t0 - 0.6) / 0.6, 0, 1)}">Run many Claude Code sessions in cmux<br>without losing track of them.</div></div>`;
+    <div style="margin-top:34px;text-align:center;font-size:52px;color:var(--orc-text-muted);opacity:${clamp((t - t0 - 0.6) / 0.6, 0, 1)}">Run many Claude Code sessions in cmux<br>without losing track of them.</div></div>`;
 }
 
 function endCard(t, t0, t1) {
@@ -338,7 +340,10 @@ function resolvePoint(k, win, cfg) {
   const el = win.querySelector("#" + k.target);
   if (!el) return null;
   const r = localRect(el, win);
-  return { x: r.x + r.w / 2 + (k.dx || 0), y: r.y + r.h / 2 + (k.dy || 0) };
+  // top/left: pin that edge of the element near the view's edge instead of centring it
+  const x = k.left ? r.x - (k.pad ?? 24) + cfg.view.cx / k.s : k.right ? r.x + r.w + (k.pad ?? 24) - cfg.view.cx / k.s : r.x + r.w / 2;
+  const y = k.top ? r.y - (k.pad ?? 24) + cfg.view.cy / k.s : r.y + r.h / 2;
+  return { x: x + (k.dx || 0), y: y + (k.dy || 0) };
 }
 function track(keys, t, win, cfg, valueOf) {
   // interpolate between keyframes with eased motion
@@ -382,6 +387,8 @@ window.render = (t) => {
   const gk = CFG.loopFade ? Math.min(clamp(t / CFG.loopFade, 0, 1), clamp((CFG.dur - t) / CFG.loopFade, 0, 1)) : 1;
   st.innerHTML = `<div style="position:absolute;inset:0;opacity:${gk}">${html}</div><div id="cap"></div>`;
 
+  // terminals read top-down; once they overflow, keep the newest lines in view
+  for (const term of st.querySelectorAll(".term")) if (term.scrollHeight > term.clientHeight) term.style.justifyContent = "flex-end";
   for (const win of st.querySelectorAll(".winx")) {
     const kind = win.id.slice(4);
     const camKeys = kind === "problem" ? [{ t: 0, home: true }] : CFG.cam;
@@ -409,7 +416,7 @@ window.render = (t) => {
       const el = win.querySelector("#" + c.anchor);
       if (!el) continue;
       const r = localRect(el, win), k = fade(t, c.t0, c.t1, 0.25);
-      win.insertAdjacentHTML("beforeend", `<div class="chip" style="left:${r.x + (c.dx || 0)}px;top:${r.y + r.h + 10 + (c.dy || 0)}px;opacity:${k};transform:translateY(${(1 - k) * 8}px)">$ ${esc(c.text)}</div>`);
+      win.insertAdjacentHTML("beforeend", `<div class="chip" style="left:${r.x + (c.dx || 0)}px;top:${r.y + r.h + 10 + (c.dy || 0)}px;opacity:${k};transform:translateY(${(1 - k) * 8}px)">${esc(c.prefix ?? "$ ")}${esc(c.text)}</div>`);
     }
     win.style.transform = `translate(${CFG.view.cx - cam.s * cam.x}px, ${CFG.view.cy - cam.s * cam.y}px) scale(${cam.s})`;
   }
@@ -437,7 +444,7 @@ Run the 12 checkout cases
 ## Inputs
 
 ## Output
-<span class="${chg(E.jobOutput)}">${t >= E.jobOutput ? "12/12 pass" : ""}</span>
+<span class="${chg(E.jobOutput)}">${t >= E.jobOutput ? "12/12 pass\n" : ""}</span>
 ## Log<span class="${chg(Math.max(E.jobTaken, t >= E.jobDone ? E.jobDone : -1))}">${log}</span>`;
     st.insertAdjacentHTML("beforeend", `<div class="card" style="left:${CFG.card.x}px;top:${CFG.card.y}px;transform:scale(${CFG.card.s}) translateY(${(1 - k) * 20}px);transform-origin:0 0;opacity:${k}">${card}</div>`);
   }

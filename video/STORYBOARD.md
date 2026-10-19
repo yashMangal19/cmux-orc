@@ -5,10 +5,10 @@ Master: 1920×1080, 30 fps, H.264, about 80 s. Captions are burned in at 56 px o
 
 ## How it is made
 
-**Rendered (default for every shot).** An HTML/CSS replica of a cmux window: a left workspace panel, a tab bar, a terminal pane and the right sidebar. It is driven by a timeline script and recorded frame by frame in headless Chromium (Playwright) → PNG frames → ffmpeg. The sidebar replica copies `cmux/sidebars/orc-status.js` exactly: the same row layout, status colours (working #0A84FF, idle #34C759, waiting #FF9F0A, needs you #FF453A), the "⚠ needs you · <stage>" line, the time column, and the Orc rollup text ("⚠ 1 need you · 3 working").
+**Rendered (every shot).** An HTML/CSS replica of a cmux window: a left workspace panel, a tab bar, a terminal pane and the right sidebar. It is driven by a timeline script and recorded frame by frame in headless Chromium (Playwright) → PNG frames → ffmpeg. The sidebar replica copies `cmux/sidebars/orc-status.js` exactly: the same row layout, status colours (working #0A84FF, idle #34C759, waiting #FF9F0A, needs you #FF453A), the "⚠ needs you · <stage>" line, the time column, and the Orc rollup text ("⚠ 1 need you · 3 working").
 Why rendered: the result is deterministic and reproducible, and no other workspace, real session or notification from the user's machine can leak into a frame. Every shot can be re-cut when the brand or copy changes.
 
-**Real (optional, needs a go).** One dedicated cmux window with `CLAUDE_ORC_HOME=<scratch>`, a `Demo-Orc` and three harmless children. Captured with `screencapture -l <windowid>` (that window only). Used as (a) a reference still to check that the replica is faithful, and (b) a possible "this is real" closing beat. About 10 min of screen use. **Not done without your go.**
+No real footage: every frame is rendered from the replica, whose sidebar is drawn from the sidebar's own logic.
 
 All names in frames are fictional: `Shop-Orc`, `Shop-QA`, `Shop-Docs`, `Shop-API`, the path `~/shop`.
 
@@ -37,7 +37,21 @@ The cropped tab bar and sidebar, about 6 s: tabs spawn → stages tick → ⚠ a
 
 ## Outputs (assets/media/)
 `cmux-orc-promo.mp4`, `cmux-orc-promo-poster.png`, `cmux-orc-hero.gif` (+ `.mp4`), `feature-{orc-tabs,sidebar,needs-you,jobs}.{gif,mp4}`.
-Sources: `video/scenes/` (HTML + timeline), `video/render.mjs`, `video/build.sh`. Raw frames go in `video/raw/` (git-ignored).
+`video/build.sh` also copies the promo, the poster and the four feature GIFs into `docs/media/` for the site.
+Every shot is **rendered**. None is real footage.
+
+## Rebuild
+```
+video/build.sh          # render all scenes (headless Chrome via Playwright), then encode
+video/build.sh encode   # re-encode only, from video/raw/*.mp4
+node video/render.mjs master --stills 12,45.5   # spot-check frames → video/raw/stills/
+```
+Sources: `video/scenes/app.html` (the cmux replica + styles), `scenes.js` (renderer; the sidebar logic is a port of `cmux/sidebars/orc-status.js`), `configs.js` (the timeline for each output). Raw renders go in `video/raw/` (git-ignored).
+Needs Node, ffmpeg and Playwright (`npm i -g playwright`). It uses the installed Google Chrome by default; set `PW_CHANNEL=chromium` to use Playwright's own build instead.
+
+## Shot changes made during production
+- Shot 6: you answer the permission prompt with the key `1` (shown as a key chip), not with a click, because that is how Claude Code takes the answer.
+- Shot 8: the Orc row shows its counts exactly as the sidebar computes them, e.g. `⚠ 1 need you · 1 working · 2 waiting · 1 idle`.
 
 ## Claims checked against the code
 - init renames, colours and pins (`bin/orc` cmd_init). Spawn asks first (skills/orc Orc rules). Stage renames the tab to "Role · text" (cmd_stage, sidebar splitTitle).

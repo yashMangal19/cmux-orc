@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html data-theme="dark">
 <head>
 <meta charset="utf-8">
 <title>cmux-orc scenes</title>
@@ -41,7 +41,8 @@
   .tab.act { background: #0f1319; color: var(--orc-text); box-shadow: inset 0 2px 0 var(--tc, #2ec4b6); }
   .tab.warn { color: #ff6b61; }
   .term { flex: 1; padding: 14px 20px; box-sizing: border-box; font-family: var(--orc-font-mono); font-size: 16px; line-height: 1.55;
-    display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
+    display: flex; flex-direction: column; justify-content: flex-start; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
+  .term > * { flex: none; }
   .term .l { min-height: 1.55em; }
   .dim { color: var(--orc-text-faint); }
   .mut { color: var(--orc-text-muted); }
@@ -86,6 +87,7 @@
   #cap span { background: #05080ce6; color: #fff; font-weight: 600; text-align: center; border-radius: 16px;
     letter-spacing: -0.01em; line-height: 1.22; box-shadow: 0 0 0 1px #ffffff1a; }
   #cap b { color: var(--orc-accent-strong); }
+  #cap b.w { color: #FF453A; }
   .full { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 40; }
   .mono { font-family: var(--orc-font-mono); }
 </style>
