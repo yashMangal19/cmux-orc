@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+"""orc: run a Claude Code orchestrator ("Orc") and its child sessions as tabs in cmux.
+
+  orc init <Name> [--colour C] [--adopt]   make the current cmux workspace an Orc
+  orc spawn <Role> [--cwd DIR] [--brief FILE|TEXT] [-- claude args]
+  orc stage <text>                          (child) report what you are doing now
+  orc close <Role> [--force]                close a finished child, keep it resumable
+  orc resume <Role>                         reopen a closed child in a new tab
+  orc list [--json]                         show Orcs, children and stages
+
+State lives in $CLAUDE_ORC_HOME (default ~/.agentic/sessions)/registry.json.
+Stdlib only, so it installs anywhere cmux + python3 run.
+"""
+import argparse, base64, fcntl, json, os, re, shlex, subprocess, sys, time
+from contextlib import contextmanager
+from pathlib import Path
+
+HOME = Path(os.environ.get("CLAUDE_ORC_HOME", "~/.agentic/sessions")).expanduser()
+REGISTRY = HOME / "registry.json"
+HOOK_SESSIONS = Path("~/.cmuxterm/claude-hook-sessions.json").expanduser()
+CMUX = os.environ.get("CMUX_BUNDLED_CLI_PATH") or "cmux"
+COLOURS = ["Purple", "Teal", "Blue", "Rose", "Green", "Orange", "Indigo", "Crimson",
+           "Aqua", "Olive", "Magenta", "Navy", "Brown"]  # Amber is Sessions-Manager's
+SPINNER = re.compile(r"^[^\w~./]+\s*")  # Claude's "✳ " / "◑ " title prefix
+
+
+def die(msg):
+    print(f"orc: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def now():
+    return time.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+
+def cmux(*args, check=True):
+    r = subprocess.run([CMUX, "--id-format", "uuids", *args], capture_output=True, text=True,
+                       env={**os.environ, "CMUX_QUIET": "1"})
+    if check and r.returncode != 0:
+        die(f"cmux {' '.join(args)} failed: {r.stderr.strip() or r.stdout.strip()}")
+    return r.stdout.strip()
+
+
+def new_surface_id(out):
+    """`new-surface` prints `OK <surface> <pane> <workspace>` in uuid mode."""
+    m = re.search(r"\bOK\s+(?:surface=)?(\S+)", out)
+    return m.group(1) if m else None
+
+
+@contextmanager
+def registry():
+    """Locked read-modify-write of the registry."""
+    HOME.mkdir(parents=True, exist_ok=True)
+    with open(HOME / ".registry.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {}
+        data.setdefault("version", 1)
+        data.setdefault("orcs", {})
+        yield data
+        tmp = REGISTRY.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, indent=2) + "\n")
+        tmp.replace(REGISTRY)
+
+
+def hook_sessions():
+    try:
+        return json.loads(HOOK_SESSIONS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def session_for_surface(surface_id):
+    """cmux's own record of the Claude session running in a surface, or {}."""
+    hs = hook_sessions()
+    sid = (hs.get("activeSessionsBySurface", {}).get(surface_id) or {}).get("sessionId")
+    return hs.get("sessions", {}).get(sid, {}) if sid else {}
+
+
+def session_name(sess):
+    """The /rename name, read from the transcript's last custom-title entry."""
+    path = sess.get("transcriptPath")
+    name = None
+    if path and os.path.exists(path):
+        with open(path, errors="replace") as f:
+            for line in f:
+                if '"custom-title"' in line:
+                    try:
+                        name = json.loads(line).get("customTitle") or name
+                    except ValueError:
+                        pass
+    return name
+
+
+def here():
+    ws, sf = os.environ.get("CMUX_WORKSPACE_ID"), os.environ.get("CMUX_SURFACE_ID")
+    if not ws or not sf:
+        die("not running inside a cmux terminal (CMUX_WORKSPACE_ID unset)")
+    return ws, sf
+
+
+def find_orc(data, ws):
+    for name, orc in data["orcs"].items():
+        if orc["workspace"] == ws:
+            return name, orc
+    die("this workspace is not an Orc; run `orc init <Name>` first")
+
+
+def find_child(orc, role):
+    for name, c in orc["children"].items():
+        if role in (name, c.get("role")):
+            return name, c
+    die(f"no child '{role}' (have: {', '.join(orc['children']) or 'none'})")
+
+
+def workspace_surfaces(ws):
+    """[(surface_id, pane_id, title)] for terminal tabs in a workspace, in tab order."""
+    out = cmux("tree", "--workspace", ws)
+    res, pane = [], None
+    for line in out.splitlines():
+        if m := re.search(r"pane (\S+)", line):
+            pane = m.group(1)
+        if m := re.search(r'surface (\S+) \[terminal\] "(.*?)"', line):
+            res.append((m.group(1), pane, m.group(2)))
+    return res
+
+
+def orc_launch_args():
+    """The Orc's own claude flags (e.g. permission mode), so children inherit them."""
+    raw = os.environ.get("CMUX_AGENT_LAUNCH_ARGV_B64")
+    if not raw:
+        return []
+    argv = [a for a in base64.b64decode(raw).decode().split("\0") if a][1:]
+    keep, skip = [], False
+    for a in argv:
+        if skip:
+            skip = False
+            continue
+        if a in ("-n", "--name", "-r", "--resume", "--session-id"):
+            skip = True
+            continue
+        if a in ("-c", "--continue") or not a.startswith("-"):
+            continue
+        keep.append(a)
+    return keep
+
+
+# ---------------------------------------------------------------- commands
+
+def cmd_init(a):
+    ws, sf = here()
+    if not a.name.endswith("-Orc"):
+        die("an Orc's name must end in -Orc (e.g. Jarvis-Orc)")
+    with registry() as data:
+        if a.name in data["orcs"] and data["orcs"][a.name]["workspace"] != ws:
+            die(f"{a.name} already exists in another workspace")
+        used = {o["colour"] for n, o in data["orcs"].items() if n != a.name}
+        colour = a.colour or next((c for c in COLOURS if c not in used), COLOURS[0])
+        orc = data["orcs"].setdefault(a.name, {"children": {}, "created": now()})
+        orc.update(workspace=ws, surface=sf, colour=colour, project=a.name[:-4])
+        adopted = []
+        if a.adopt:
+            for sid, _, title in workspace_surfaces(ws):
+                if sid == sf or any(c["surface"] == sid for c in orc["children"].values()):
+                    continue
+                sess = session_for_surface(sid)
+                name = session_name(sess) or SPINNER.sub("", title)
+                prefix = orc["project"] + "-"
+                orc["children"][name] = {
+                    "role": name[len(prefix):] if name.startswith(prefix) else name,
+                    "surface": sid, "cwd": sess.get("cwd"), "session": sess.get("sessionId"),
+                    "status": "open", "stage": None, "created": now(),
+                }
+                adopted.append(name)
+    cmux("rename-workspace", "--workspace", ws, a.name)
+    cmux("workspace-action", "--workspace", ws, "--action", "set-color", "--color", colour)
+    cmux("workspace-action", "--workspace", ws, "--action", "pin")
+    print(f"{a.name}: {colour}, pinned" + (f"; adopted {', '.join(adopted)}" if adopted else ""))
+
+
+def cmd_spawn(a):
+    ws, sf = here()
+    with registry() as data:
+        orc_name, orc = find_orc(data, ws)
+        name = f"{orc['project']}-{a.role}"
+        old = orc["children"].get(name)
+        if old and old["status"] == "open":
+            die(f"{name} is already open")
+    cwd = str(Path(a.cwd or os.getcwd()).expanduser().resolve())
+    brief = a.brief or ""
+    if brief and Path(brief).expanduser().is_file():
+        brief = f"Read your brief at {Path(brief).expanduser().resolve()} and start."
+    prompt = (f"You are {name}, a child session of {orc_name}. Talk only to {orc_name} "
+              f"(SendMessage to \"{orc_name}\"); never ask other sessions for work directly. "
+              f"Report your stage at milestones with `orc stage \"<short text>\"`. "
+              + (brief or f"Wait for {orc_name} to send your task."))
+    claude = [os.environ.get("CMUX_AGENT_LAUNCH_EXECUTABLE", "claude"),
+              *(a.claude_args or orc_launch_args()), "-n", name, prompt]
+    command = f"cd {shlex.quote(cwd)} && " + " ".join(shlex.quote(x) for x in claude)
+
+    tabs = workspace_surfaces(ws)
+    pane = next((p for s, p, _ in tabs if s == sf), None)
+    out = cmux("new-surface", "--type", "terminal", "--workspace", ws,
+               *(["--pane", pane] if pane else []), "--command", command, "--focus", "false")
+    surface = new_surface_id(out) or die(f"could not read new surface from: {out}")
+    with registry() as data:
+        orc = data["orcs"][orc_name]
+        last = next((c["surface"] for c in reversed(orc["children"].values())
+                     if c["status"] == "open"), sf)
+        orc["children"][name] = {"role": a.role, "surface": surface, "cwd": cwd, "session": None,
+                                 "status": "open", "stage": "starting", "created": now(),
+                                 **({"previous": old} if old else {})}
+    cmux("move-surface", "--surface", surface, "--after", last, "--focus", "false", check=False)
+    print(f"{name}: tab opened in {orc_name} ({cwd})")
+
+
+def cmd_stage(a):
+    ws, sf = here()
+    text = " ".join(a.text).strip()[:80]
+    label = None
+    with registry() as data:
+        for orc_name, orc in data["orcs"].items():
+            for name, c in orc["children"].items():
+                if c["surface"] == sf and c["status"] == "open":
+                    c.update(stage=text, stage_at=now())
+                    label = f"{c['role']} · {text}"
+            if not label and orc["surface"] == sf:
+                orc.update(stage=text, stage_at=now())
+                label = f"{orc_name} · {text}"
+            if label:
+                break
+    if not label:
+        die("this tab is not an Orc or one of its children")
+    # The status sidebar cannot read files; the tab title is how the stage reaches it.
+    cmux("rename-tab", "--workspace", ws, "--surface", sf, label, check=False)
+    print(label)
+
+
+def needs_user(sess):
+    """True when the child is waiting on a human (permission prompt or a question)."""
+    if sess.get("hookEventName") in ("Notification", "PermissionRequest"):
+        return True
+    return (sess.get("lastBody") or "").rstrip().endswith("?")
+
+
+def status(sess):
+    if not sess:
+        return "?"
+    if needs_user(sess):
+        return "needs you"
+    if sess.get("agentLifecycle") in ("ended", "idle") or sess.get("hookEventName") in ("Stop", "SessionEnd"):
+        return "idle" if sess.get("agentLifecycle") != "ended" else "ended"
+    return "working"
+
+
+def cmd_close(a):
+    ws, _ = here()
+    with registry() as data:
+        orc_name, orc = find_orc(data, ws)
+        name, c = find_child(orc, a.role)
+    if c["status"] != "open":
+        die(f"{name} is already {c['status']}")
+    sess = session_for_surface(c["surface"])
+    cwd = sess.get("cwd") or c.get("cwd")
+    if not a.force:
+        if cwd and os.path.isdir(cwd):
+            dirty = subprocess.run(["git", "-C", cwd, "status", "--porcelain"],
+                                   capture_output=True, text=True)
+            if dirty.returncode == 0 and dirty.stdout.strip():
+                die(f"{name} has uncommitted changes in {cwd}; commit or ask the user")
+        if needs_user(sess):
+            die(f"{name} is waiting on the user; let them answer first")
+    with registry() as data:
+        c = data["orcs"][orc_name]["children"][name]
+        c.update(status="closed", closed=now(), session=sess.get("sessionId") or c.get("session"),
+                 transcript=sess.get("transcriptPath"), cwd=cwd)
+        sid = c["session"]
+    cmux("close-surface", "--surface", c["surface"], check=False)
+    print(f"{name}: closed" + (f"; reopen with `orc resume {c['role']}` (session {sid})" if sid else ""))
+
+
+def cmd_resume(a):
+    ws, sf = here()
+    with registry() as data:
+        orc_name, orc = find_orc(data, ws)
+        name, c = find_child(orc, a.role)
+    if c["status"] != "closed" or not c.get("session"):
+        die(f"{name} is not a closed child with a saved session")
+    claude = [os.environ.get("CMUX_AGENT_LAUNCH_EXECUTABLE", "claude"), *orc_launch_args(),
+              "--resume", c["session"]]
+    command = f"cd {shlex.quote(c['cwd'] or os.getcwd())} && " + " ".join(map(shlex.quote, claude))
+    pane = next((p for s, p, _ in workspace_surfaces(ws) if s == sf), None)
+    out = cmux("new-surface", "--type", "terminal", "--workspace", ws,
+               *(["--pane", pane] if pane else []), "--command", command, "--focus", "false")
+    with registry() as data:
+        data["orcs"][orc_name]["children"][name].update(
+            status="open", surface=new_surface_id(out), resumed=now())
+    print(f"{name}: resumed")
+
+
+def cmd_list(a):
+    data = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"orcs": {}}
+    if a.json:
+        print(json.dumps(data, indent=2))
+        return
+    hs = hook_sessions()
+    for orc_name, orc in data["orcs"].items():
+        print(f"■ {orc_name}  ({orc['colour']})" + (f"  — {orc['stage']}" if orc.get("stage") else ""))
+        for name, c in orc["children"].items():
+            if c["status"] != "open":
+                print(f"   ✓ {name}  closed {c.get('closed', '')[:16]}")
+                continue
+            sess = session_for_surface(c["surface"])
+            state = status(sess)
+            print(f"   ● {name}  {state}  {c.get('stage') or (sess.get('lastBody') or '')[:60]}")
+
+
+def main():
+    p = argparse.ArgumentParser(prog="orc", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("init"); s.add_argument("name"); s.add_argument("--colour")
+    s.add_argument("--adopt", action="store_true", help="adopt the workspace's other tabs as children")
+    s.set_defaults(fn=cmd_init)
+    s = sub.add_parser("spawn"); s.add_argument("role"); s.add_argument("--cwd"); s.add_argument("--brief")
+    s.set_defaults(fn=cmd_spawn)
+    s = sub.add_parser("stage"); s.add_argument("text", nargs="+"); s.set_defaults(fn=cmd_stage)
+    s = sub.add_parser("close"); s.add_argument("role")
+    s.add_argument("--force", action="store_true", help="skip safety checks (user's call only)")
+    s.set_defaults(fn=cmd_close)
+    s = sub.add_parser("resume"); s.add_argument("role"); s.set_defaults(fn=cmd_resume)
+    s = sub.add_parser("list"); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_list)
+    argv = sys.argv[1:]
+    extra = argv[argv.index("--") + 1:] if "--" in argv else []  # spawn: flags for claude
+    a = p.parse_args(argv[:len(argv) - len(extra) - (1 if extra or "--" in argv else 0)])
+    a.claude_args = extra
+    a.fn(a)
+
+
+if __name__ == "__main__":
+    main()
