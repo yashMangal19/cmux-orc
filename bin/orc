@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """orc: run a Claude Code orchestrator ("Orc") and its child sessions as tabs in cmux.
 
-  orc init <Name> [--colour C] [--adopt]   make the current cmux workspace an Orc
+  orc init <Name> [--colour C] [--adopt] [--inbox DIR --prefix P]
+                                            make the current cmux workspace an Orc
   orc spawn <Role> [--cwd DIR] [--brief FILE|TEXT] [-- claude args]
   orc stage <text>                          (child) report what you are doing now
   orc close <Role> [--force]                close a finished child, keep it resumable
@@ -165,6 +166,10 @@ def cmd_init(a):
         colour = a.colour or next((c for c in COLOURS if c not in used), COLOURS[0])
         orc = data["orcs"].setdefault(a.name, {"children": {}, "created": now()})
         orc.update(workspace=ws, surface=sf, colour=colour, project=a.name[:-4])
+        if a.inbox:
+            orc["inbox"] = str(Path(a.inbox).expanduser().resolve())
+        if a.prefix:
+            orc["job_prefix"] = a.prefix
         adopted = []
         if a.adopt:
             for sid, _, title in workspace_surfaces(ws):
@@ -464,6 +469,8 @@ def main():
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("init"); s.add_argument("name"); s.add_argument("--colour")
+    s.add_argument("--inbox", help="use an existing team inbox folder")
+    s.add_argument("--prefix", help="job id prefix for the team inbox (default J)")
     s.add_argument("--adopt", action="store_true", help="adopt the workspace's other tabs as children")
     s.set_defaults(fn=cmd_init)
     s = sub.add_parser("spawn"); s.add_argument("role"); s.add_argument("--cwd"); s.add_argument("--brief")
