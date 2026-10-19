@@ -1,0 +1,119 @@
+/* cmux-orc brand tokens. Dark is the default; light applies with
+   prefers-color-scheme: light or [data-theme="light"].
+   Status colours are the exact values cmux/sidebars/orc-status.js draws. */
+
+:root {
+  /* Surfaces (dark) */
+  --orc-bg: #0d1117;
+  --orc-surface: #151b23;
+  --orc-raised: #1d2530;
+  --orc-border: #2a3340;
+  --orc-text: #e6eaf0;
+  --orc-text-muted: #9aa4b2;
+  --orc-text-faint: #6b7584;
+
+  /* Brand accent: Teal. It is one of the Orc colours in bin/orc. */
+  --orc-accent: #2ec4b6;
+  --orc-accent-strong: #5ee0d3;
+  --orc-accent-ink: #062b28;        /* text on accent */
+  --orc-accent-soft: #2ec4b61f;
+
+  /* Status: identical to the sidebar (same in both themes) */
+  --orc-status-working: #0a84ff;     /* working */
+  --orc-status-idle: #34c759;        /* idle */
+  --orc-status-turn: #ff9f0a;        /* "your turn" / waiting: finished a turn */
+  --orc-status-blocked: #ff453a;     /* ⚠ needs you: question or permission prompt */
+  --orc-status-ended: #7f7f7f66;     /* ended */
+  --orc-status-none: #7f7f7f44;      /* no session */
+  --orc-row-hover: #7f7f7f24;
+  --orc-row-focused: #7f7f7f2e;
+
+  /* Orc workspace colours, in bin/orc's order. Hexes are ours, for visuals. */
+  --orc-c-purple: #9b6dff;
+  --orc-c-teal: #2ec4b6;
+  --orc-c-blue: #3b82f6;
+  --orc-c-rose: #f43f75;
+  --orc-c-green: #22c55e;
+  --orc-c-orange: #f97316;
+  --orc-c-indigo: #6366f1;
+  --orc-c-crimson: #dc2645;
+  --orc-c-aqua: #22d3ee;
+  --orc-c-olive: #8a9a2b;
+  --orc-c-magenta: #d946ef;
+  --orc-c-navy: #1e3a8a;
+  --orc-c-brown: #9a6233;
+  --orc-c-amber: #f5b301;            /* reserved for Sessions-Manager */
+
+  /* Type (free Google Fonts: Inter, JetBrains Mono) */
+  --orc-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --orc-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --orc-text-xs: 0.75rem;     /* 12 */
+  --orc-text-sm: 0.875rem;    /* 14 */
+  --orc-text-md: 1rem;        /* 16 body */
+  --orc-text-lg: 1.25rem;     /* 20 */
+  --orc-text-xl: 1.625rem;    /* 26 */
+  --orc-text-2xl: 2.25rem;    /* 36 */
+  --orc-text-3xl: 3.25rem;    /* 52 */
+  --orc-text-4xl: 4.5rem;     /* 72 hero */
+  --orc-leading-tight: 1.1;
+  --orc-leading-snug: 1.3;
+  --orc-leading-body: 1.6;
+  --orc-weight-regular: 400;
+  --orc-weight-medium: 500;
+  --orc-weight-semibold: 600;
+  --orc-weight-bold: 700;
+  --orc-tracking-tight: -0.02em;
+
+  /* Radii */
+  --orc-radius-xs: 3px;
+  --orc-radius-sm: 6px;
+  --orc-radius-md: 10px;
+  --orc-radius-lg: 16px;
+  --orc-radius-pill: 999px;
+
+  /* Spacing (4px base) */
+  --orc-space-1: 4px;
+  --orc-space-2: 8px;
+  --orc-space-3: 12px;
+  --orc-space-4: 16px;
+  --orc-space-5: 24px;
+  --orc-space-6: 32px;
+  --orc-space-7: 48px;
+  --orc-space-8: 64px;
+  --orc-space-9: 96px;
+
+  --orc-shadow: 0 1px 0 #ffffff0a inset, 0 8px 24px #00000059;
+  --orc-max-width: 1120px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --orc-bg: #f7f8fa;
+    --orc-surface: #ffffff;
+    --orc-raised: #eef1f5;
+    --orc-border: #d9dee6;
+    --orc-text: #11161d;
+    --orc-text-muted: #4b5563;
+    --orc-text-faint: #6b7280;
+    --orc-accent: #0f8f84;
+    --orc-accent-strong: #0a6f66;
+    --orc-accent-ink: #ffffff;
+    --orc-accent-soft: #0f8f8414;
+    --orc-shadow: 0 1px 2px #0000000f, 0 8px 24px #0000000f;
+  }
+}
+
+:root[data-theme="light"] {
+  --orc-bg: #f7f8fa;
+  --orc-surface: #ffffff;
+  --orc-raised: #eef1f5;
+  --orc-border: #d9dee6;
+  --orc-text: #11161d;
+  --orc-text-muted: #4b5563;
+  --orc-text-faint: #6b7280;
+  --orc-accent: #0f8f84;
+  --orc-accent-strong: #0a6f66;
+  --orc-accent-ink: #ffffff;
+  --orc-accent-soft: #0f8f8414;
+  --orc-shadow: 0 1px 2px #0000000f, 0 8px 24px #0000000f;
+}
