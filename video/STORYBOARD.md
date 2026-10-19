@@ -29,7 +29,7 @@ All names in frames are fictional: `Shop-Orc`, `Shop-QA`, `Shop-Docs`, `Shop-API
 ## Hero GIF (≤ 8 s loop, ≤ 5 MB, 800 px wide)
 The cropped tab bar and sidebar, about 6 s: tabs spawn → stages tick → ⚠ appears on one tab and the row turns red → it clears → loop. No caption band; the motion carries it.
 
-## Feature clips (each 4–6 s, mp4 + GIF at 800 px, one short caption)
+## Feature clips (each 6–7 s, mp4 + GIF at 800 px, one short caption)
 1. `orc-tabs`: `orc init` + spawn, the tile is coloured and pinned, and tabs appear (shots 3–4).
 2. `sidebar`: stage updates and timers in the Orc view, then the Sessions overview (shots 5 and 8).
 3. `needs-you`: ⚠ on, red row, jump, cleared (shot 6).
@@ -56,4 +56,4 @@ Needs Node, ffmpeg and Playwright (`npm i -g playwright`). It uses the installed
 ## Claims checked against the code
 - init renames, colours and pins (`bin/orc` cmd_init). Spawn asks first (skills/orc Orc rules). Stage renames the tab to "Role · text" (cmd_stage, sidebar splitTitle).
 - ⚠ comes from AskUserQuestion / permission and elicitation Notifications, and clears on PostToolUse / UserPromptSubmit / Stop (hooks/orc-hook.py).
-- A team job ID uses the Orc's prefix, default `J` (`inbox_for`). The README's `S-001` example for Shop-QA does not match. See the note to Launch-Orc.
+- A team job ID uses the Orc's prefix, default `J` (`inbox_for`). The README uses `J-001` for Shop-QA.

@@ -34,7 +34,7 @@
   </nav>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1">
 <section class="hero wrap" id="top">
   <p class="eyebrow">A Claude Code plugin for <a href="https://cmux.com">cmux</a></p>
   <h1>Run a team of Claude Code sessions.<br><span>See which one needs you.</span></h1>
@@ -98,24 +98,24 @@
   <h2 id="feat-h">Four things it adds to cmux</h2>
   <div class="features">
     <article class="feat">
-      <div class="viz viz-orc" aria-hidden="true" data-gif="media/feature-orc-tabs.gif" data-alt="An Orc workspace pinned in cmux with its child tabs">
+      <div class="viz viz-orc" aria-hidden="true" data-clip="media/feature-orc-tabs.mp4" data-alt="An Orc workspace pinned in cmux with its child tabs">
         <div class="mini-ws"><span class="tile"></span>Shop-Orc <span class="pin">📌</span></div>
         <div class="mini-tabs"><span class="on">Shop-Orc</span><span>QA · case 3/12</span><span>Docs · README</span></div>
       </div>
       <h3>Orcs</h3>
-      <p>An Orc is one Claude session that runs a team. Its workspace is one coloured, pinned tile in the left panel. Its children are tabs to the right of the Orc’s tab. The Orc starts, closes and reopens them, and asks you before each new one.</p>
+      <p>An Orc is one Claude session that runs a team. Its workspace is one coloured, pinned tile in the left panel. Its children are tabs to the right of the Orc’s tab. The Orc starts, closes and reopens them, and its skill has it ask you before each new one.</p>
     </article>
     <article class="feat">
-      <div class="viz viz-side" aria-hidden="true" data-gif="media/feature-sidebar.gif" data-alt="The orc-status sidebar listing children with status, time and stage">
+      <div class="viz viz-side" aria-hidden="true" data-clip="media/feature-sidebar.mp4" data-alt="The orc-status sidebar listing children with status, time and stage">
         <div class="row"><i style="background:#0A84FF"></i><b>QA</b><time>4m</time><small>case 41/88</small></div>
         <div class="row"><i style="background:#34C759"></i><b>Docs</b><time>12m</time><small>idle</small></div>
         <div class="row"><i style="background:#FF9F0A"></i><b>API</b><time>30s</time><small class="o">waiting</small></div>
       </div>
       <h3>Status sidebar</h3>
-      <p>A right-sidebar panel shows every child: status, how long it has been in that state, and its stage. Outside an Orc you see one row per Orc (“4 working · ⚠ 1 need you”) and every independent session.</p>
+      <p>A right-sidebar panel shows every child: status, how long it has been in that state, and its stage. Outside an Orc you see one row per Orc (“⚠ 1 need you · 4 working”) and every independent session.</p>
     </article>
     <article class="feat">
-      <div class="viz viz-warn" aria-hidden="true" data-gif="media/feature-needs-you.gif" data-alt="A child tab gets a ⚠ and its sidebar row turns red">
+      <div class="viz viz-warn" aria-hidden="true" data-clip="media/feature-needs-you.mp4" data-alt="A child tab gets a ⚠ and its sidebar row turns red">
         <div class="mini-tabs"><span>QA · case 41/88</span><span class="red">⚠ Docs · README</span></div>
         <div class="row"><i style="background:#FF453A"></i><b>Docs</b><time>1m</time><small class="r">⚠ needs you · README</small></div>
       </div>
@@ -123,7 +123,7 @@
       <p>When a session stops on a question or a permission prompt, its tab gets a ⚠ and the sidebar row turns red. The mark clears when you answer.</p>
     </article>
     <article class="feat">
-      <div class="viz viz-job" aria-hidden="true" data-gif="media/feature-jobs.gif" data-alt="A job file moving from open to taken to done">
+      <div class="viz viz-job" aria-hidden="true" data-clip="media/feature-jobs.mp4" data-alt="A job file moving from open to taken to done">
         <div class="file"><span>Shop-QA--J-001-smoke-cases.md</span><em class="s-done">done</em></div>
         <pre>## Output
 12/12 pass</pre>
@@ -137,7 +137,7 @@
 <section class="wrap" id="video" aria-labelledby="video-h">
   <h2 id="video-h">See it in motion</h2>
     <!-- site.js swaps in the video once docs/media/cmux-orc-promo.mp4 exists. -->
-  <figure class="video-slot" id="video-slot" data-video="media/cmux-orc-promo.mp4" data-poster="media/cmux-orc-promo-poster.png">
+  <figure class="video-slot" id="video-slot" data-video="media/cmux-orc-promo.mp4" data-poster="media/cmux-orc-promo-poster.jpg">
     <div class="video-ph">Video coming soon</div>
   </figure>
 </section>
@@ -192,7 +192,7 @@ orc job set J-001 done "12/12 pass"</code></pre>
   <h2 id="faq-h">FAQ</h2>
   <div class="faq">
     <details><summary>What does a child session cost?</summary><p>Each child is a full Claude Code session with its own context, so it uses tokens like any session you start yourself. That is why the <code>orc</code> skill tells the Orc to ask you before every <code>orc spawn</code>. Close children when their work is checked; <code>orc resume</code> brings one back if you need it again.</p></details>
-    <details><summary>Does it need cmux?</summary><p>Yes. Tabs, workspace colours, pinning, the ⚠ mark and the sidebar all go through cmux. <code>orc init</code>, <code>spawn</code>, <code>stage</code>, <code>close</code>, <code>resume</code> and <code>pane</code> stop with <code>not running inside a cmux terminal</code> outside it. The job commands and <code>orc list</code> only read and write files.</p></details>
+    <details><summary>Does it need cmux?</summary><p>Yes. Tabs, workspace colours, pinning, the ⚠ mark and the sidebar all go through cmux. <code>orc init</code>, <code>spawn</code>, <code>stage</code>, <code>close</code>, <code>resume</code> and <code>pane</code> stop with <code>not running inside a cmux terminal</code> outside it. <code>orc setup</code> makes its links anywhere, but shows the panel only inside cmux. The job commands and <code>orc list</code> only read and write files.</p></details>
     <details><summary>What is “waiting” versus ⚠?</summary><p>“waiting” (orange) is cmux’s status for a session that finished its turn and is idle until you type. ⚠ (red) means the session stopped in the middle of its work on a question or a permission prompt, and nothing happens until you answer. Only ⚠ means a session is blocked on you.</p></details>
     <details><summary>Does it work on Linux or Windows?</summary><p>No. cmux is a macOS app, and cmux-orc needs it. The CLI also uses <code>fcntl</code> file locks, which Windows does not have.</p></details>
     <details><summary>Can I use it without Orcs?</summary><p>Yes. With the plugin installed, every session in cmux gets the ⚠ mark, and the sidebar’s Sessions overview lists independent sessions with their status. You can name one session <code>Sessions-Manager</code> and pass jobs between independent sessions. <code>orc stage</code> works only in an Orc tab or a child tab.</p></details>

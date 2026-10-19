@@ -50,16 +50,19 @@
     }).catch(() => {});
   }
 
-  // GIFs animate, so reduced-motion visitors keep the still drawings.
+  // Clips animate, so reduced-motion visitors keep the still drawings.
+  // Each loops as a muted video and loads only when it nears the viewport.
   if (still) return;
-  for (const viz of document.querySelectorAll("[data-gif]")) {
-    const img = new Image();
-    img.onload = () => {
-      img.alt = viz.dataset.alt;
-      img.className = "feat-gif";
-      img.loading = "lazy";
-      viz.replaceWith(img);
-    };
-    img.src = viz.dataset.gif;
-  }
+  const show = (viz) => {
+    const v = document.createElement("video");
+    Object.assign(v, { muted: true, loop: true, autoplay: true, playsInline: true, preload: "auto" });
+    v.className = "feat-gif";
+    v.setAttribute("aria-label", viz.dataset.alt);
+    v.addEventListener("loadeddata", () => viz.replaceWith(v), { once: true });
+    v.src = viz.dataset.clip;
+  };
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { io.unobserve(e.target); show(e.target); }
+  }, { rootMargin: "200px" });
+  document.querySelectorAll("[data-clip]").forEach((viz) => io.observe(viz));
 })();
