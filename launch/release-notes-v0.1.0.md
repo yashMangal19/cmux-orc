@@ -18,7 +18,7 @@ Requires macOS, cmux 0.64 or later, Claude Code with plugin support, and `python
 
 ## What's in it
 
-- **Orcs.** `orc init <Name>-Orc` makes a cmux workspace an Orc: renamed, coloured and pinned. `orc spawn`, `orc close` and `orc resume` start, close and reopen child sessions as tabs. Children get the Orc's `claude` flags unless you give their own after `--`.
+- **Orcs.** `orc init <Name>-Orc` makes a cmux workspace an Orc: renamed, coloured and pinned. `--prefix` gives the team its own job-ID prefix, and `--inbox` adopts an existing inbox folder. `orc spawn`, `orc close` and `orc resume` start, close and reopen child sessions as tabs. Children get the Orc's `claude` flags unless you give their own after `--`.
 - **Stages.** `orc stage "<text>"` shows what a session is doing in its tab title and in the sidebar.
 - **Status sidebar.** The `orc-status` cmux Custom Sidebar shows an Orc's children with status, time in state and stage. Outside an Orc it shows one row per Orc and every independent session. `orc pane` brings it back.
 - **⚠ needs you.** A hook marks a tab with ⚠ while its session waits on a question or a permission prompt. The sidebar shows that row in red.

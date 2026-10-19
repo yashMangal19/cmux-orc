@@ -80,7 +80,7 @@ If you switch the right sidebar to Files, Find or Vault, run `orc pane` to bring
 
 | Command | Does |
 |---|---|
-| `orc init <Name>-Orc [--colour C] [--adopt]` | Make the current cmux workspace an Orc: rename, colour, pin. |
+| `orc init <Name>-Orc [--colour C] [--adopt] [--inbox DIR] [--prefix P]` | Make the current cmux workspace an Orc: rename, colour, pin. `--inbox` uses an existing team inbox folder; `--prefix` sets its job-ID prefix (default `J`). |
 | `orc spawn <Role> [--cwd DIR] [--brief FILE\|TEXT] [-- claude flags]` | Open a tab named `<Project>-<Role>` and start Claude there with the brief. |
 | `orc stage <text>` | Record what this session is doing now (≤ 80 chars) and show it in the tab title. Works in an Orc tab or a child tab. |
 | `orc close <Role> [--force]` | Save the child's session id, then close its tab. `--force` skips the safety checks; it is meant for you, not the Orc. |
@@ -171,7 +171,7 @@ Workspace colours and pins are cmux settings; change them in cmux.
 - Spawning into a folder Claude Code has not trusted yet stops the child at the trust prompt until someone answers it.
 - Hooks load when a session starts, so restart running sessions after you install.
 - `orc list` shows "needs you" from cmux's last hook event and from whether the session's last message ends in `?`. The sidebar's ⚠ is the more exact signal.
-- Job IDs are unique inside one inbox, not across all of them. `orc job set` uses the caller's own inbox first and refuses an ID that is still ambiguous.
+- Job IDs are unique inside one inbox, not across all of them. `orc job set` uses the caller's own inbox first and refuses an ID that is still ambiguous. Give each Orc its own prefix (`orc init Shop-Orc --prefix SH`) to avoid the clash.
 - One level only. Children are tabs in the Orc's workspace; there is no nesting of Orcs inside Orcs.
 
 ## Contributing

@@ -12,6 +12,7 @@ First public release.
 
 - `orc` CLI: `init`, `spawn`, `stage`, `close`, `resume`, `list`, `pane`, `setup`, and `job new / set / list`.
 - `orc spawn` gives a child the Orc's own `claude` flags with their values (`--model opus`, `--permission-mode …`), minus the flags that belong to the Orc's own session. Flags after `--` replace them.
+- `orc init --inbox DIR --prefix P` adopts an existing team inbox folder and sets the team's job-ID prefix.
 - `orc job set` uses the caller's own team inbox when the same job ID is in several inboxes, and refuses an ID that is still ambiguous. `orc job new` says when a job goes to the top-level inbox because the target is not a child yet.
 - `orc list` says how to start when there are no Orcs yet. Outside cmux, or with no `cmux` binary, the cmux commands stop with a short message.
 - Orcs: a cmux workspace whose session name ends in `-Orc` runs child sessions as tabs. The workspace is renamed, coloured and pinned.
