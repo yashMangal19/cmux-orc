@@ -34,7 +34,10 @@ All values are in `tokens.css` (`--orc-*`). The site is dark first; light is a f
 | Border | `#2a3340` | `#d9dee6` |
 | Text | `#e6eaf0` | `#11161d` |
 | Muted text | `#9aa4b2` | `#4b5563` |
-| Accent (Teal) | `#2ec4b6` | `#0f8f84` |
+| Faint text | `#848e9e` | `#636b78` |
+| Accent (Teal) | `#2ec4b6` | `#0b7a70` |
+
+Every text colour reaches WCAG AA (4.5:1) on background, surface and raised in its theme. So do white on the light accent and `--orc-accent-ink` on the dark accent.
 
 Status colours are the exact values the sidebar (`cmux/sidebars/orc-status.js`) draws. They are the same in both themes. Never use them for decoration.
 

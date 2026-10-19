@@ -10,7 +10,7 @@
   --orc-border: #2a3340;
   --orc-text: #e6eaf0;
   --orc-text-muted: #9aa4b2;
-  --orc-text-faint: #6b7584;
+  --orc-text-faint: #848e9e;
 
   /* Brand accent: Teal. It is one of the Orc colours in bin/orc. */
   --orc-accent: #2ec4b6;
@@ -94,11 +94,11 @@
     --orc-border: #d9dee6;
     --orc-text: #11161d;
     --orc-text-muted: #4b5563;
-    --orc-text-faint: #6b7280;
-    --orc-accent: #0f8f84;
-    --orc-accent-strong: #0a6f66;
+    --orc-text-faint: #636b78;
+    --orc-accent: #0b7a70;
+    --orc-accent-strong: #08635b;
     --orc-accent-ink: #ffffff;
-    --orc-accent-soft: #0f8f8414;
+    --orc-accent-soft: #0b7a7014;
     --orc-shadow: 0 1px 2px #0000000f, 0 8px 24px #0000000f;
   }
 }
@@ -110,10 +110,10 @@
   --orc-border: #d9dee6;
   --orc-text: #11161d;
   --orc-text-muted: #4b5563;
-  --orc-text-faint: #6b7280;
-  --orc-accent: #0f8f84;
-  --orc-accent-strong: #0a6f66;
+  --orc-text-faint: #636b78;
+  --orc-accent: #0b7a70;
+  --orc-accent-strong: #08635b;
   --orc-accent-ink: #ffffff;
-  --orc-accent-soft: #0f8f8414;
+  --orc-accent-soft: #0b7a7014;
   --orc-shadow: 0 1px 2px #0000000f, 0 8px 24px #0000000f;
 }
