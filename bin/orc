@@ -431,17 +431,33 @@ created: {time.strftime("%Y-%m-%d %H:%M")}
 ## Log
 """)
     print(f"{jid} {path}")
+    if owner == "Sessions-Manager" and a.to != "Sessions-Manager":
+        print(f"note: {a.to} is not a child of any Orc, so this went to the top-level inbox. "
+              "Spawn the child first to use a team inbox.")
     print(f"next: SendMessage to \"{a.to}\" saying {jid} is in its inbox (if it is running).")
+
+
+def my_inbox(data, me):
+    """The team inbox of the Orc that `me` is or belongs to, else the top-level inbox."""
+    for name, orc in data["orcs"].items():
+        if me == name or me in orc["children"]:
+            return Path(orc.get("inbox") or HOME / "orcs" / name / "inbox").expanduser()
+    return HOME / "inbox"
 
 
 def cmd_job_set(a):
     data = load_registry()
-    for f in job_files(data):
+    who = my_name(data) or "unknown"
+    # Ids are unique only inside one inbox, so prefer the caller's own inbox.
+    hits = [f for f in job_files(data) if job_header(f.read_text(errors="ignore")).get("id") == a.id]
+    if len(hits) > 1:
+        hits = [f for f in hits if f.parent == my_inbox(data, who)] or hits
+    if len(hits) > 1:
+        die(f"{a.id} is in more than one inbox; run this from the job's own team:\n  "
+            + "\n  ".join(map(str, hits)))
+    for f in hits:
         text = f.read_text(errors="ignore")
-        if job_header(text).get("id") != a.id:
-            continue
         text = re.sub(r"^status:.*$", f"status: {a.status}", text, count=1, flags=re.M)
-        who = my_name(data) or "unknown"
         note = " ".join(a.note)
         text = text.rstrip("\n") + f"\n- {time.strftime('%Y-%m-%d %H:%M')} {who}: {a.status}" \
             + (f" — {note}" if note else "") + "\n"
